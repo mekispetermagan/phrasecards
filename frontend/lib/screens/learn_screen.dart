@@ -8,12 +8,14 @@ class LearnScreen extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback turn;
   final VoidCallback next;
+  final Future<void> Function() playAudio;
 
   const LearnScreen({
     required this.viewData,
     required this.onBack,
     required this.turn,
     required this.next,
+    required this.playAudio,
     super.key,
   });
 
@@ -29,9 +31,32 @@ class LearnScreen extends StatelessWidget {
           onPressed: turn,
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: next,
-        child: Icon(Icons.navigate_next),
+      floatingActionButton: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (viewData.isTurned && viewData.phrase.audioPath != null) ...[
+            FloatingActionButton.small(
+              heroTag: 'phrase-audio',
+              tooltip: viewData.audioError ?? 'Play pronunciation',
+              onPressed: viewData.isPlayingAudio ? null : playAudio,
+              child: viewData.isPlayingAudio
+                  ? const SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(
+                      Icons.volume_up,
+                      color: viewData.audioError == null ? null : Colors.red,
+                    ),
+            ),
+            const SizedBox(width: 12),
+          ],
+          FloatingActionButton(
+            heroTag: 'learn-next',
+            onPressed: next,
+            child: const Icon(Icons.navigate_next),
+          ),
+        ],
       ),
     );
   }

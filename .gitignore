@@ -3,6 +3,7 @@ backend/.env
 backend/.venv/
 backend/.pytest_cache/
 backend/*.db
+backend/public/audio/
 backend/.vscode/
 **/__pycache__/
 *.py[cod]

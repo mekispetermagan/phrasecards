@@ -147,7 +147,9 @@ def test_phrase_request_source_is_unique():
 
 
 
-def test_resolve_request_creates_phrase_and_removes_request(client, db_session):
+def test_resolve_request_creates_phrase_and_removes_request(
+    client, db_session, audio_generation_calls
+):
     request = PhraseRequest(source="Good afternon!")
     db_session.add(request)
     db_session.commit()
@@ -169,8 +171,10 @@ def test_resolve_request_creates_phrase_and_removes_request(client, db_session):
         "target": "Jó napot!",
         "new": True,
         "rating": 3,
+        "audio_path": None,
     }
     assert db_session.query(PhraseRequest).count() == 0
+    assert audio_generation_calls == [1]
 
     phrase = db_session.query(Phrase).one()
     assert phrase.source == "Good afternoon!"

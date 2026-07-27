@@ -26,6 +26,7 @@ def get_phrases(db: DbSession):
             target=phrase.target,
             new=phrase.new,
             rating=phrase.rating,
+            audio_path=phrase.audio_path,
         )
         for phrase in phrases
     ]

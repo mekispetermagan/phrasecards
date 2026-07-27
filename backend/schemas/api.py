@@ -13,6 +13,7 @@ class PhraseOut(BaseModel):
     target: str
     new: bool
     rating: int | None
+    audio_path: str | None
 
 
 class PhraseRequestCreate(BaseModel):

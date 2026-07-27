@@ -1,6 +1,7 @@
 from config import settings
 from database import Base, engine, SessionLocal
 from models import Phrase
+from tts import generate_missing_audio
 
 phrases = [
     ("How are you?", "Hogy vagy?"),
@@ -29,7 +30,11 @@ def main():
             )
         )
     db.commit()
-    db.close()
+    try:
+        generated, failed = generate_missing_audio(db)
+        print(f"Audio generated: {generated}; failed: {failed}")
+    finally:
+        db.close()
 
 
 if __name__ == "__main__":

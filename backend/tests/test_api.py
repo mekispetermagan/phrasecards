@@ -44,6 +44,7 @@ def test_get_phrases_returns_database_rows(client, db_session):
             "target": "Jó reggelt!",
             "new": False,
             "rating": 3,
+            "audio_path": None,
         },
         {
             "id": 2,
@@ -51,6 +52,7 @@ def test_get_phrases_returns_database_rows(client, db_session):
             "target": "Új kifejezés",
             "new": True,
             "rating": None,
+            "audio_path": None,
         },
     ]
 

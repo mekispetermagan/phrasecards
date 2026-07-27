@@ -70,6 +70,8 @@ class SessionController extends ChangeNotifier {
   LearnViewData get learnViewData => LearnViewData(
     phrase: _learn.currentPhrase,
     isTurned: _learn.cardIsTurned,
+    isPlayingAudio: _learn.isPlayingAudio,
+    audioError: _learn.audioError,
   );
 
   QuizViewData get quizViewData => QuizViewData(
@@ -82,6 +84,8 @@ class SessionController extends ChangeNotifier {
   void learnTurnCard() => _learn.turnCard();
 
   void learnNext() => _learn.next();
+
+  Future<void> learnPlayAudio() => _learn.playAudio();
 
   Future<void> quizSubmit(int guessIndex) => _quiz.submit(guessIndex);
 

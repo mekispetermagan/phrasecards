@@ -7,8 +7,15 @@ enum RequestListStatus { loading, ready, error }
 class LearnViewData {
   final Phrase phrase;
   final bool isTurned;
+  final bool isPlayingAudio;
+  final String? audioError;
 
-  const LearnViewData({required this.phrase, required this.isTurned});
+  const LearnViewData({
+    required this.phrase,
+    required this.isTurned,
+    required this.isPlayingAudio,
+    required this.audioError,
+  });
 }
 
 class QuizViewData {

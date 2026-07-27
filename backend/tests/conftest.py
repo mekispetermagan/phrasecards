@@ -6,6 +6,7 @@ from sqlalchemy.pool import StaticPool
 
 from database import Base, get_db
 from main import app
+from routers.requests import get_audio_generator
 
 
 @pytest.fixture
@@ -32,11 +33,19 @@ def db_session():
 
 
 @pytest.fixture
-def client(db_session):
+def audio_generation_calls():
+    return []
+
+
+@pytest.fixture
+def client(db_session, audio_generation_calls):
     def override_get_db():
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_audio_generator] = (
+        lambda: lambda phrase_id: audio_generation_calls.append(phrase_id) or True
+    )
     try:
         with TestClient(app) as test_client:
             yield test_client

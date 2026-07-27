@@ -90,10 +90,10 @@ void main() {
       client: MockClient(
         (_) async => http.Response('''
           [
-            {"source":"One","target":"Same","new":false,"rating":3},
-            {"source":"Two","target":"Same","new":false,"rating":3},
-            {"source":"Three","target":"Same","new":false,"rating":3},
-            {"source":"Four","target":"Same","new":false,"rating":3}
+            {"id":1,"source":"One","target":"Same","new":false,"rating":3},
+            {"id":2,"source":"Two","target":"Same","new":false,"rating":3},
+            {"id":3,"source":"Three","target":"Same","new":false,"rating":3},
+            {"id":4,"source":"Four","target":"Same","new":false,"rating":3}
           ]
           ''', 200),
       ),

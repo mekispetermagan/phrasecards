@@ -20,7 +20,8 @@ void main() {
             "source": "Good morning!",
             "target": "Jó reggelt!",
             "new": false,
-            "rating": 3
+            "rating": 3,
+            "audio_path": "/audio/phrase-1-hash.mp3"
           }
         ]
         ''',
@@ -37,6 +38,8 @@ void main() {
     expect(result.phrases!.single.target, 'Jó reggelt!');
     expect(result.phrases!.single.isNew, isFalse);
     expect(result.phrases!.single.rating, 3);
+    expect(result.phrases!.single.id, 1);
+    expect(result.phrases!.single.audioPath, '/audio/phrase-1-hash.mp3');
   });
 
   test('fetchPhrases preserves an API error and detail', () async {

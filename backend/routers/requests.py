@@ -1,11 +1,13 @@
+from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from database import get_db
 from models import Phrase, PhraseRequest
+from tts import generate_phrase_audio
 from schemas.api import (
     PhraseOut,
     PhraseRequestCreate,
@@ -14,6 +16,14 @@ from schemas.api import (
 )
 
 DbSession = Annotated[Session, Depends(get_db)]
+AudioGenerator = Callable[[int], bool]
+
+
+def get_audio_generator() -> AudioGenerator:
+    return generate_phrase_audio
+
+
+AudioGeneratorDependency = Annotated[AudioGenerator, Depends(get_audio_generator)]
 
 router = APIRouter()
 
@@ -86,7 +96,12 @@ def add_request(request_data: PhraseRequestCreate, db: DbSession):
     response_model=PhraseOut,
     status_code=status.HTTP_201_CREATED,
 )
-def resolve_request(resolution: PhraseRequestResolve, db: DbSession):
+def resolve_request(
+    resolution: PhraseRequestResolve,
+    background_tasks: BackgroundTasks,
+    db: DbSession,
+    generate_audio: AudioGeneratorDependency,
+):
     request = db.get(PhraseRequest, resolution.request_id)
     if request is None:
         raise HTTPException(
@@ -113,6 +128,7 @@ def resolve_request(resolution: PhraseRequestResolve, db: DbSession):
         ) from error
 
     db.refresh(phrase)
+    background_tasks.add_task(generate_audio, phrase.id)
 
     return PhraseOut(
         id=phrase.id,
@@ -120,4 +136,5 @@ def resolve_request(resolution: PhraseRequestResolve, db: DbSession):
         target=phrase.target,
         new=phrase.new,
         rating=phrase.rating,
+        audio_path=phrase.audio_path,
     )

@@ -13,6 +13,11 @@ class Phrase(Base):
     target: Mapped[str] = mapped_column(String(255), unique=False, nullable=False)
     new: Mapped[bool] = mapped_column(Boolean, unique=False, nullable=False)
     rating: Mapped[int] = mapped_column(Integer, unique=False, nullable=True)
+    audio_path: Mapped[str | None] = mapped_column(
+        String(255),
+        unique=False,
+        nullable=True,
+    )
 
 
 class PhraseRequest(Base):
