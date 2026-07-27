@@ -1,0 +1,61 @@
+from models import Phrase
+
+
+def test_health_check(client):
+    response = client.get("/api/health")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_get_phrases_returns_empty_list(client):
+    response = client.get("/api/phrases")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_get_phrases_returns_database_rows(client, db_session):
+    db_session.add_all(
+        [
+            Phrase(
+                source="Good morning!",
+                target="Jó reggelt!",
+                new=False,
+                rating=3,
+            ),
+            Phrase(
+                source="New phrase",
+                target="Új kifejezés",
+                new=True,
+                rating=None,
+            ),
+        ]
+    )
+    db_session.commit()
+
+    response = client.get("/api/phrases")
+
+    assert response.status_code == 200
+    assert response.json() == [
+        {
+            "id": 1,
+            "source": "Good morning!",
+            "target": "Jó reggelt!",
+            "new": False,
+            "rating": 3,
+        },
+        {
+            "id": 2,
+            "source": "New phrase",
+            "target": "Új kifejezés",
+            "new": True,
+            "rating": None,
+        },
+    ]
+
+
+def test_post_phrases_is_not_allowed(client):
+    response = client.post("/api/phrases")
+
+    assert response.status_code == 405
