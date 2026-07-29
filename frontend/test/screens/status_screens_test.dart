@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wordcards/screens/error_screen.dart';
-import 'package:wordcards/screens/loading_screen.dart';
+import 'package:phrasecards/screens/error_screen.dart';
+import 'package:phrasecards/screens/loading_screen.dart';
 
 void main() {
   testWidgets('loading screen displays a progress indicator', (tester) async {

@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:wordcards/api/api.dart';
-import 'package:wordcards/controllers/request_submission_controller.dart';
-import 'package:wordcards/controllers/resolution_controller.dart';
-import 'package:wordcards/models/phrase_request.dart';
-import 'package:wordcards/models/view_data.dart';
+import 'package:phrasecards/api/api.dart';
+import 'package:phrasecards/controllers/request_submission_controller.dart';
+import 'package:phrasecards/controllers/resolution_controller.dart';
+import 'package:phrasecards/models/phrase_request.dart';
+import 'package:phrasecards/models/view_data.dart';
 
 void main() {
   test('request submission validates and submits trimmed source', () async {

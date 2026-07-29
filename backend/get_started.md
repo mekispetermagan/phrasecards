@@ -10,4 +10,4 @@ From `backend/`:
 Audio is served at `/audio`. In production, Nginx may serve `backend/public/audio/`
 directly at the same URL and reverse-proxy `/api` to Uvicorn. Set `CORS_ORIGINS` to
 a JSON list of exact frontend web origins, for example
-`["https://phrasecards.example.com"]`. Native Flutter apps do not require CORS.
+`["https://phrasecards.mekis.dev"]`. Native Flutter apps do not require CORS.

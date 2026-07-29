@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "wordcards" "\0"
+            VALUE "CompanyName", "mekis.dev" "\0"
+            VALUE "FileDescription", "PhraseCards" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "wordcards" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "wordcards.exe" "\0"
-            VALUE "ProductName", "wordcards" "\0"
+            VALUE "InternalName", "phrasecards" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 mekis.dev. All rights reserved." "\0"
+            VALUE "OriginalFilename", "phrasecards.exe" "\0"
+            VALUE "ProductName", "PhraseCards" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

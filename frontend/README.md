@@ -1,3 +1,3 @@
-# wordcards
+# PhraseCards
 
-A new Flutter project.
+A personal Hungarian phrase-learning app.

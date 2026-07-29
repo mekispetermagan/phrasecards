@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wordcards/audio/pronunciation_player.dart';
-import 'package:wordcards/controllers/pronunciation_controller.dart';
+import 'package:phrasecards/audio/pronunciation_player.dart';
+import 'package:phrasecards/controllers/pronunciation_controller.dart';
 
 class ControllablePronunciationPlayer implements PronunciationPlayer {
   final plays = <String>[];

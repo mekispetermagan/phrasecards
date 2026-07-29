@@ -77,7 +77,7 @@ The default frontend configuration expects the API at
 `http://127.0.0.1:8000`. A different endpoint can be supplied at build time:
 
 ```bash
-flutter run --dart-define=API_BASE_URL=https://example.com
+flutter run --dart-define=API_BASE_URL=https://mekis.dev
 ```
 
 For more backend and reverse-proxy notes, see

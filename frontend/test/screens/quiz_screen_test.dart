@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wordcards/models/pronunciation.dart';
-import 'package:wordcards/models/quiz.dart';
-import 'package:wordcards/models/view_data.dart';
-import 'package:wordcards/screens/quiz_screen.dart';
-import 'package:wordcards/widgets/buttons.dart';
+import 'package:phrasecards/models/pronunciation.dart';
+import 'package:phrasecards/models/quiz.dart';
+import 'package:phrasecards/models/view_data.dart';
+import 'package:phrasecards/screens/quiz_screen.dart';
+import 'package:phrasecards/widgets/buttons.dart';
 
 const _question = QuizQuestion(
   source: 'Hello',

@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:wordcards/api/_api_support.dart';
-import 'package:wordcards/api/api.dart';
+import 'package:phrasecards/api/_api_support.dart';
+import 'package:phrasecards/api/api.dart';
 
 void main() {
   test('fetchPhrases sends GET and decodes phrases', () async {

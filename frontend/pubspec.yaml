@@ -1,5 +1,5 @@
-name: wordcards
-description: "A new Flutter project."
+name: phrasecards
+description: "A personal Hungarian phrase-learning app."
 publish_to: 'none'
 version: 0.1.0+1
 

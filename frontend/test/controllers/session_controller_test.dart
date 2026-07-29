@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:wordcards/api/api.dart';
-import 'package:wordcards/controllers/session_controller.dart';
-import 'package:wordcards/models/view_data.dart';
+import 'package:phrasecards/api/api.dart';
+import 'package:phrasecards/controllers/session_controller.dart';
+import 'package:phrasecards/models/view_data.dart';
 
 const _fourPhrases = '''
 [

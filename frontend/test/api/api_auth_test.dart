@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:wordcards/api/api.dart';
+import 'package:phrasecards/api/api.dart';
 
 void main() {
   test('API clients attach the configured app key', () async {

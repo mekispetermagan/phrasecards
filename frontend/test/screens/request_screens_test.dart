@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wordcards/models/phrase_request.dart';
-import 'package:wordcards/models/view_data.dart';
-import 'package:wordcards/screens/request_screen.dart';
-import 'package:wordcards/screens/resolution_form_screen.dart';
-import 'package:wordcards/screens/resolve_screen.dart';
+import 'package:phrasecards/models/phrase_request.dart';
+import 'package:phrasecards/models/view_data.dart';
+import 'package:phrasecards/screens/request_screen.dart';
+import 'package:phrasecards/screens/resolution_form_screen.dart';
+import 'package:phrasecards/screens/resolve_screen.dart';
 
 void main() {
   testWidgets('request screen forwards text and submission', (tester) async {

@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wordcards/audio/pronunciation_player.dart';
-import 'package:wordcards/controllers/pronunciation_controller.dart';
-import 'package:wordcards/controllers/quiz_controller.dart';
-import 'package:wordcards/models/phrase.dart';
+import 'package:phrasecards/audio/pronunciation_player.dart';
+import 'package:phrasecards/controllers/pronunciation_controller.dart';
+import 'package:phrasecards/controllers/quiz_controller.dart';
+import 'package:phrasecards/models/phrase.dart';
 
 class _UnusedPronunciationPlayer implements PronunciationPlayer {
   @override

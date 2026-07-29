@@ -1,11 +1,11 @@
 {
-    "name": "wordcards",
-    "short_name": "wordcards",
+    "name": "PhraseCards",
+    "short_name": "PhraseCards",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "A personal Hungarian phrase-learning app.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

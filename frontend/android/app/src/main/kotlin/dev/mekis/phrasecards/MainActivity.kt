@@ -1,4 +1,4 @@
-package com.example.wordcards
+package dev.mekis.phrasecards
 
 import io.flutter.embedding.android.FlutterActivity
 
