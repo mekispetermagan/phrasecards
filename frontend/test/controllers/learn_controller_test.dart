@@ -1,19 +1,23 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:wordcards/audio/phrase_audio_player.dart';
+import 'package:wordcards/audio/pronunciation_player.dart';
 import 'package:wordcards/controllers/learn_controller.dart';
+import 'package:wordcards/controllers/pronunciation_controller.dart';
 import 'package:wordcards/models/phrase.dart';
 
-class FakePhraseAudioPlayer implements PhraseAudioPlayer {
+class FakePronunciationPlayer implements PronunciationPlayer {
   final Completer<void> playback = Completer<void>();
   final List<String> paths = [];
 
   @override
-  Future<void> playPhrase(String audioPath) {
+  Future<void> play(String audioPath) {
     paths.add(audioPath);
     return playback.future;
   }
+
+  @override
+  Future<void> stop() async {}
 }
 
 void main() {
@@ -29,24 +33,30 @@ void main() {
   test(
     'exposes playback progress and delegates the backend audio path',
     () async {
-      final player = FakePhraseAudioPlayer();
-      final controller = LearnController(phrases: [phrase], audio: player);
+      final player = FakePronunciationPlayer();
+      final pronunciation = PronunciationController(player: player);
+      final controller = LearnController(
+        phrases: [phrase],
+        pronunciation: pronunciation,
+      );
       addTearDown(controller.dispose);
+      addTearDown(pronunciation.dispose);
 
       final playback = controller.playAudio();
-      expect(controller.isPlayingAudio, isTrue);
+      expect(controller.pronunciationData.isPlaying, isTrue);
       expect(player.paths, ['/audio/phrase-3-hash.mp3']);
 
       player.playback.complete();
       await playback;
 
-      expect(controller.isPlayingAudio, isFalse);
-      expect(controller.audioError, isNull);
+      expect(controller.pronunciationData.isPlaying, isFalse);
+      expect(controller.pronunciationData.error, isNull);
     },
   );
 
   test('phrases without audio remain fully usable', () async {
-    final player = FakePhraseAudioPlayer();
+    final player = FakePronunciationPlayer();
+    final pronunciation = PronunciationController(player: player);
     final controller = LearnController(
       phrases: [
         const Phrase(
@@ -58,9 +68,10 @@ void main() {
           audioPath: null,
         ),
       ],
-      audio: player,
+      pronunciation: pronunciation,
     );
     addTearDown(controller.dispose);
+    addTearDown(pronunciation.dispose);
 
     await controller.playAudio();
 

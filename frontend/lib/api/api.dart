@@ -60,14 +60,17 @@ class PhraseRequestListResult {
 
 class PhrasesApi {
   final http.Client _client;
+  final Map<String, String> _headers;
 
-  PhrasesApi({http.Client? client}) : _client = client ?? http.Client();
+  PhrasesApi({http.Client? client, String apiKey = ApiConfig.apiKey})
+    : _client = client ?? http.Client(),
+      _headers = _apiHeaders(apiKey);
 
   Future<PhraseListResult> fetchPhrases() async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/phrases');
 
     try {
-      final response = await _client.get(uri);
+      final response = await _client.get(uri, headers: _headers);
 
       final data = decodeJsonBody(response.body);
 
@@ -96,14 +99,17 @@ class PhrasesApi {
 
 class RequestsApi {
   final http.Client _client;
+  final Map<String, String> _headers;
 
-  RequestsApi({http.Client? client}) : _client = client ?? http.Client();
+  RequestsApi({http.Client? client, String apiKey = ApiConfig.apiKey})
+    : _client = client ?? http.Client(),
+      _headers = _apiHeaders(apiKey);
 
   Future<PhraseRequestListResult> fetchRequests() async {
     final uri = Uri.parse(ApiConfig.baseUrl).resolve("/api/requests");
 
     try {
-      final response = await _client.get(uri);
+      final response = await _client.get(uri, headers: _headers);
       final data = decodeJsonBody(response.body);
 
       if (response.statusCode == 200) {
@@ -135,7 +141,7 @@ class RequestsApi {
     try {
       final response = await _client.post(
         uri,
-        headers: {"content-type": "application/json"},
+        headers: {..._headers, "content-type": "application/json"},
         body: jsonEncode({"source": source}),
       );
       final data = decodeJsonBody(response.body);
@@ -168,7 +174,7 @@ class RequestsApi {
     try {
       final response = await _client.post(
         uri,
-        headers: {"content-type": "application/json"},
+        headers: {..._headers, "content-type": "application/json"},
         body: jsonEncode({
           "request_id": requestId,
           "source": source,
@@ -194,4 +200,9 @@ class RequestsApi {
       return const ResolveResult.failure(failure: Failure.networkError);
     }
   }
+}
+
+Map<String, String> _apiHeaders(String apiKey) {
+  if (apiKey.isEmpty) return const {};
+  return {"X-PhraseCards-Key": apiKey};
 }

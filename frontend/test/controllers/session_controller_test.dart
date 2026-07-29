@@ -59,6 +59,10 @@ void main() {
     expect(controller.learnViewData.phrase.source, 'One');
     expect(controller.learnViewData.isTurned, isFalse);
     expect(controller.quizViewData.question.options, hasLength(4));
+    expect(controller.quizViewData.showPronunciationButtons, isTrue);
+
+    controller.quizSetShowPronunciationButtons(false);
+    expect(controller.quizViewData.showPronunciationButtons, isFalse);
 
     var notifications = 0;
     controller.addListener(() => notifications++);

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../models/pronunciation.dart';
+
 class MenuButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
@@ -36,41 +38,36 @@ class ExitButton extends StatelessWidget {
   }
 }
 
-class PhraseCard extends StatelessWidget {
-  final String primaryPhrase;
-  final String secondaryPhrase;
-  final bool isTurned;
+class SpeakerButton extends StatelessWidget {
+  final PronunciationData pronunciation;
   final VoidCallback onPressed;
+  final Color? color;
 
-  const PhraseCard({
-    required this.primaryPhrase,
-    required this.secondaryPhrase,
-    required this.isTurned,
+  const SpeakerButton({
+    required this.pronunciation,
     required this.onPressed,
+    this.color,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
-    return FractionallySizedBox(
-      widthFactor: 0.5,
-      heightFactor: 0.5,
-      child: FilledButton(
-        onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          backgroundColor: isTurned
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.secondary,
-        ),
-        child: Text(
-          isTurned ? secondaryPhrase : primaryPhrase,
-          style: TextStyle(fontSize: 24),
-          textAlign: TextAlign.center,
-        ),
-      ),
+    if (pronunciation.path == null) return const SizedBox.shrink();
+
+    return IconButton(
+      tooltip: pronunciation.error ?? 'Play pronunciation',
+      padding: const EdgeInsets.all(24),
+      onPressed: onPressed,
+      icon: pronunciation.isPlaying
+          ? const SizedBox.square(
+              dimension: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.volume_up),
+      iconSize: 36,
+      color: pronunciation.error == null
+          ? color
+          : Theme.of(context).colorScheme.error,
     );
   }
 }

@@ -8,13 +8,18 @@ from routers import api
 
 settings.audio_directory.mkdir(parents=True, exist_ok=True)
 
-app = FastAPI(title="PhraseCards API")
+app = FastAPI(
+    title="PhraseCards API",
+    docs_url="/docs" if settings.docs_enabled else None,
+    redoc_url="/redoc" if settings.docs_enabled else None,
+    openapi_url="/openapi.json" if settings.docs_enabled else None,
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=False,
     allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "X-PhraseCards-Key"],
 )
 app.mount(
     settings.audio_url_path,

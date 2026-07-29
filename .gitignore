@@ -12,5 +12,7 @@ backend/.vscode/
 *.orig
 *.rej
 
+frontend/api-key.json
+
 # Nested platform build output not covered by Flutter build rules.
 frontend/android/build/

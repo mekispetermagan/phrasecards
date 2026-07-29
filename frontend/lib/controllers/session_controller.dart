@@ -7,6 +7,7 @@ import '../models/phrase.dart';
 import '../models/phrase_request.dart';
 import '../models/view_data.dart';
 import 'learn_controller.dart';
+import 'pronunciation_controller.dart';
 import 'quiz_controller.dart';
 import 'request_submission_controller.dart';
 import 'resolution_controller.dart';
@@ -29,6 +30,7 @@ class SessionController extends ChangeNotifier {
   QuizController? _quizController;
   late final RequestSubmissionController _requestController;
   late final ResolutionController _resolutionController;
+  final PronunciationController _pronunciationController;
 
   final PhrasesApi _api;
   SessionStatus status = SessionStatus.loading;
@@ -43,13 +45,19 @@ class SessionController extends ChangeNotifier {
     ("Resolve a request", _onResolve),
   ];
 
-  SessionController({PhrasesApi? api, RequestsApi? requestsApi})
-    : _api = api ?? PhrasesApi() {
+  SessionController({
+    PhrasesApi? api,
+    RequestsApi? requestsApi,
+    PronunciationController? pronunciationController,
+  }) : _api = api ?? PhrasesApi(),
+       _pronunciationController =
+           pronunciationController ?? PronunciationController() {
     final requestApi = requestsApi ?? RequestsApi();
     _requestController = RequestSubmissionController(requestApi)
       ..addListener(_forwardNotification);
     _resolutionController = ResolutionController(requestApi)
       ..addListener(_forwardNotification);
+    _pronunciationController.addListener(_forwardNotification);
     unawaited(_load());
   }
 
@@ -70,15 +78,18 @@ class SessionController extends ChangeNotifier {
   LearnViewData get learnViewData => LearnViewData(
     phrase: _learn.currentPhrase,
     isTurned: _learn.cardIsTurned,
-    isPlayingAudio: _learn.isPlayingAudio,
-    audioError: _learn.audioError,
+    isNew: _learn.currentPhrase.isNew,
+    pronunciation: _learn.pronunciationData,
   );
 
   QuizViewData get quizViewData => QuizViewData(
     question: _quiz.currentQuestion,
     score: _quiz.score,
+    maxScore: _quiz.counter,
     correctHighlightIndex: _quiz.correctHighlightIndex,
     wrongHighlightIndex: _quiz.wrongHighlightIndex,
+    optionPronunciations: _quiz.optionPronunciations,
+    showPronunciationButtons: _quiz.showPronunciationButtons,
   );
 
   void learnTurnCard() => _learn.turnCard();
@@ -88,6 +99,12 @@ class SessionController extends ChangeNotifier {
   Future<void> learnPlayAudio() => _learn.playAudio();
 
   Future<void> quizSubmit(int guessIndex) => _quiz.submit(guessIndex);
+
+  Future<void> quizPlayAudio(int optionIndex) =>
+      _quiz.playOptionAudio(optionIndex);
+
+  void quizSetShowPronunciationButtons(bool value) =>
+      _quiz.setShowPronunciationButtons(value);
 
   RequestSubmissionViewData get requestViewData => _requestController.viewData;
 
@@ -180,11 +197,15 @@ class SessionController extends ChangeNotifier {
   }
 
   void _initializeFeatures(List<Phrase> phrases) {
-    _learnController = LearnController(phrases: phrases)
-      ..addListener(_forwardNotification);
+    _learnController = LearnController(
+      phrases: phrases,
+      pronunciation: _pronunciationController,
+    )..addListener(_forwardNotification);
 
-    _quizController = QuizController(phrases: phrases)
-      ..addListener(_forwardNotification);
+    _quizController = QuizController(
+      phrases: phrases,
+      pronunciation: _pronunciationController,
+    )..addListener(_forwardNotification);
   }
 
   @override
@@ -194,11 +215,13 @@ class SessionController extends ChangeNotifier {
     _quizController?.removeListener(_forwardNotification);
     _requestController.removeListener(_forwardNotification);
     _resolutionController.removeListener(_forwardNotification);
+    _pronunciationController.removeListener(_forwardNotification);
 
     _learnController?.dispose();
     _quizController?.dispose();
     _requestController.dispose();
     _resolutionController.dispose();
+    _pronunciationController.dispose();
 
     super.dispose();
   }

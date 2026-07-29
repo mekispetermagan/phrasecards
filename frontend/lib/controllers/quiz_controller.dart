@@ -4,6 +4,8 @@ import 'dart:async';
 import '../models/phrase.dart';
 import '../models/quiz.dart';
 import '../audio/audio.dart';
+import '../models/pronunciation.dart';
+import 'pronunciation_controller.dart';
 
 enum QuizState { guessing, feedbackCorrect, feedbackWrong }
 
@@ -11,24 +13,40 @@ class QuizController extends ChangeNotifier {
   final int numberOfOptions = 4;
   final List<Phrase> phrases;
   int _counter = 0;
-  int score = 0;
+  int _score = 0;
   late QuizQuestion currentQuestion;
   int? correctHighlightIndex;
   int? wrongHighlightIndex;
   QuizState state = QuizState.guessing;
+  bool showPronunciationButtons = false;
   Audio? _audio;
+  final PronunciationController pronunciation;
 
-  QuizController({required this.phrases}) {
+  QuizController({required this.phrases, required this.pronunciation}) {
     _generateQuestion();
   }
 
   Phrase get currentPhrase => phrases[_counter % phrases.length];
-  List<String> get pool => [for (var phrase in phrases) phrase.target];
+  int get counter => _counter;
+  int get score => _score;
+  List<PronunciationData> get optionPronunciations => [
+    for (final option in currentQuestion.options)
+      pronunciation.dataFor(option.audioPath),
+  ];
+
+  Future<void> playOptionAudio(int optionIndex) =>
+      pronunciation.play(currentQuestion.options[optionIndex].audioPath);
+
+  void setShowPronunciationButtons(bool value) {
+    if (showPronunciationButtons == value) return;
+    showPronunciationButtons = value;
+    notifyListeners();
+  }
 
   Future<void> submit(int guessIndex) async {
     if (guessIndex == currentQuestion.correctIndex) {
       state = QuizState.feedbackCorrect;
-      score++;
+      _score++;
       correctHighlightIndex = guessIndex;
       (_audio ??= Audio()).playCorrect();
     } else {
@@ -56,10 +74,9 @@ class QuizController extends ChangeNotifier {
 
   void _generateQuestion() {
     currentQuestion = QuizQuestion.fromPool(
-      source: currentPhrase.source,
-      target: currentPhrase.target,
+      phrase: currentPhrase,
       numberOfOptions: numberOfOptions,
-      distractorPool: pool,
+      distractorPool: phrases,
     );
   }
 }

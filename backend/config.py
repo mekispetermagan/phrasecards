@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     audio_directory: Path = BACKEND_DIR / "public" / "audio"
     audio_url_path: str = "/audio"
     cors_origins: list[str] = Field(default_factory=list)
+    api_key: str = ""
+    docs_enabled: bool = True
     tts_language: str = "hu"
     tts_tld: str = "com"
 

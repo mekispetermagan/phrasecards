@@ -1,5 +1,6 @@
 import 'phrase.dart';
 import 'phrase_request.dart';
+import 'pronunciation.dart';
 import 'quiz.dart';
 
 enum RequestListStatus { loading, ready, error }
@@ -7,28 +8,34 @@ enum RequestListStatus { loading, ready, error }
 class LearnViewData {
   final Phrase phrase;
   final bool isTurned;
-  final bool isPlayingAudio;
-  final String? audioError;
+  final bool isNew;
+  final PronunciationData pronunciation;
 
   const LearnViewData({
     required this.phrase,
     required this.isTurned,
-    required this.isPlayingAudio,
-    required this.audioError,
+    required this.isNew,
+    required this.pronunciation,
   });
 }
 
 class QuizViewData {
   final QuizQuestion question;
   final int score;
+  final int maxScore;
   final int? correctHighlightIndex;
   final int? wrongHighlightIndex;
+  final List<PronunciationData> optionPronunciations;
+  final bool showPronunciationButtons;
 
   const QuizViewData({
     required this.question,
     required this.score,
+    required this.maxScore,
     required this.correctHighlightIndex,
     required this.wrongHighlightIndex,
+    required this.optionPronunciations,
+    required this.showPronunciationButtons,
   });
 }
 

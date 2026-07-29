@@ -11,7 +11,15 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: AppRoot(), theme: ThemeData.dark());
+    return MaterialApp(
+      home: AppRoot(),
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.dark,
+        ),
+      ),
+    );
   }
 }
 
@@ -81,6 +89,9 @@ class _AppRootState extends State<AppRoot> {
         viewData: _sessionController.quizViewData,
         onBack: _sessionController.onMenu,
         submit: _sessionController.quizSubmit,
+        playAudio: _sessionController.quizPlayAudio,
+        setShowPronunciationButtons:
+            _sessionController.quizSetShowPronunciationButtons,
       ),
 
       SessionStatus.request => RequestScreen(

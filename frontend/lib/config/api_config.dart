@@ -7,6 +7,10 @@ class ApiConfig {
     'API_BASE_URL',
     defaultValue: debugBaseUrl,
   );
+  static const String apiKey = String.fromEnvironment(
+    'API_KEY',
+    defaultValue: '',
+  );
 
   static String resolveApiUrl(String value) {
     final uri = Uri.parse(value);

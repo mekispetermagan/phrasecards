@@ -1,5 +1,6 @@
 export 'session_controller.dart';
 export 'learn_controller.dart';
+export 'pronunciation_controller.dart';
 export 'quiz_controller.dart';
 export 'request_submission_controller.dart';
 export 'resolution_controller.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/appbar.dart';
-import '../widgets/buttons.dart';
+import '../widgets/phrasecard.dart';
 import '../models/view_data.dart';
 
 class LearnScreen extends StatelessWidget {
@@ -25,38 +25,18 @@ class LearnScreen extends StatelessWidget {
       appBar: FeatureAppBar(title: "Learn phrases", onBack: onBack),
       body: Center(
         child: PhraseCard(
-          primaryPhrase: viewData.phrase.source,
-          secondaryPhrase: viewData.phrase.target,
+          phrase: viewData.phrase,
+          isNewPhrase: viewData.isNew,
           isTurned: viewData.isTurned,
+          pronunciation: viewData.pronunciation,
           onPressed: turn,
+          playAudio: playAudio,
         ),
       ),
-      floatingActionButton: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (viewData.isTurned && viewData.phrase.audioPath != null) ...[
-            FloatingActionButton.small(
-              heroTag: 'phrase-audio',
-              tooltip: viewData.audioError ?? 'Play pronunciation',
-              onPressed: viewData.isPlayingAudio ? null : playAudio,
-              child: viewData.isPlayingAudio
-                  ? const SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Icon(
-                      Icons.volume_up,
-                      color: viewData.audioError == null ? null : Colors.red,
-                    ),
-            ),
-            const SizedBox(width: 12),
-          ],
-          FloatingActionButton(
-            heroTag: 'learn-next',
-            onPressed: next,
-            child: const Icon(Icons.navigate_next),
-          ),
-        ],
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'learn-next',
+        onPressed: next,
+        child: const Icon(Icons.navigate_next),
       ),
     );
   }
