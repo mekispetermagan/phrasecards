@@ -16,6 +16,15 @@ const _fourPhrases = '''
 ]
 ''';
 
+const _refreshedPhrases = '''
+[
+  {"id":5,"source":"Fresh one","target":"Friss egy","new":false,"rating":3},
+  {"id":6,"source":"Fresh two","target":"Friss kettő","new":false,"rating":3},
+  {"id":7,"source":"Fresh three","target":"Friss három","new":false,"rating":3},
+  {"id":8,"source":"Fresh four","target":"Friss négy","new":false,"rating":3}
+]
+''';
+
 Future<void> _waitForStatus(
   SessionController controller,
   SessionStatus expected,
@@ -24,7 +33,9 @@ Future<void> _waitForStatus(
     if (controller.status == expected) return;
     await Future<void>.delayed(Duration.zero);
   }
-  fail('Session did not reach $expected; current state: ${controller.status}');
+  fail(
+    'Session did not reach $expected; current state: ${controller.status}; error: ${controller.errorMessage}',
+  );
 }
 
 void main() {
@@ -141,6 +152,84 @@ void main() {
 
     expect(controller.status, SessionStatus.menu);
     expect(controller.errorMessage, isNull);
+  });
+
+  test(
+    'returning to menu refreshes phrases without blocking the menu',
+    () async {
+      var fetches = 0;
+      final refreshResponse = Completer<http.Response>();
+      final api = PhrasesApi(
+        client: MockClient((_) {
+          fetches++;
+          if (fetches == 1) {
+            return Future.value(
+              http.Response(
+                _fourPhrases,
+                200,
+                headers: {'content-type': 'application/json; charset=utf-8'},
+              ),
+            );
+          }
+          return refreshResponse.future;
+        }),
+      );
+      final controller = SessionController(api: api);
+      addTearDown(controller.dispose);
+      await _waitForStatus(controller, SessionStatus.menu);
+
+      controller.menuItems.first.$2();
+      controller.onMenu();
+
+      expect(controller.status, SessionStatus.menu);
+      expect(controller.learnViewData.phrase.source, 'One');
+
+      await Future<void>.delayed(Duration.zero);
+      controller.onMenu();
+      await Future<void>.delayed(Duration.zero);
+      expect(fetches, 2);
+
+      refreshResponse.complete(
+        http.Response(
+          _refreshedPhrases,
+          200,
+          headers: {'content-type': 'application/json; charset=utf-8'},
+        ),
+      );
+      for (var attempt = 0; attempt < 20; attempt++) {
+        if (controller.learnViewData.phrase.source == 'Fresh one') break;
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      expect(controller.learnViewData.phrase.source, 'Fresh one');
+    },
+  );
+
+  test('failed menu refresh keeps the existing phrase data', () async {
+    var fetches = 0;
+    final api = PhrasesApi(
+      client: MockClient((_) async {
+        fetches++;
+        return fetches == 1
+            ? http.Response(
+                _fourPhrases,
+                200,
+                headers: {'content-type': 'application/json; charset=utf-8'},
+              )
+            : http.Response('{"detail":"Offline"}', 503);
+      }),
+    );
+    final controller = SessionController(api: api);
+    addTearDown(controller.dispose);
+    await _waitForStatus(controller, SessionStatus.menu);
+
+    controller.menuItems.first.$2();
+    controller.onMenu();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(controller.status, SessionStatus.menu);
+    expect(controller.learnViewData.phrase.source, 'One');
+    expect(fetches, 2);
   });
 
   test("request submission returns the session to menu", () async {

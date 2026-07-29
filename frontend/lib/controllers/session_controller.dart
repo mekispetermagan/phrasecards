@@ -37,6 +37,7 @@ class SessionController extends ChangeNotifier {
   SessionNotice? _notice;
   String? errorMessage;
   bool _disposed = false;
+  bool _isRefreshingPhrases = false;
 
   late final List<(String, VoidCallback)> menuItems = [
     ("Learn phrases", _onLearn),
@@ -114,8 +115,7 @@ class SessionController extends ChangeNotifier {
   Future<void> requestSubmit() async {
     if (await _requestController.submit()) {
       _notice = SessionNotice.requestSubmitted;
-      status = SessionStatus.menu;
-      notifyListeners();
+      onMenu();
     }
   }
 
@@ -176,17 +176,9 @@ class SessionController extends ChangeNotifier {
       return;
     }
 
-    if (phrases.map((phrase) => phrase.target).toSet().length < 4) {
-      errorMessage =
-          'At least four phrases with distinct translations '
-          'are required';
-      status = SessionStatus.error;
-      notifyListeners();
-      return;
-    }
-
-    if (!phrases.any((phrase) => !phrase.isNew)) {
-      errorMessage = 'At least one learned phrase is required for the quiz';
+    final validationError = _phraseValidationError(phrases);
+    if (validationError != null) {
+      errorMessage = validationError;
       status = SessionStatus.error;
       notifyListeners();
       return;
@@ -204,6 +196,11 @@ class SessionController extends ChangeNotifier {
   }
 
   void _initializeFeatures(List<Phrase> phrases) {
+    _learnController?.removeListener(_forwardNotification);
+    _quizController?.removeListener(_forwardNotification);
+    _learnController?.dispose();
+    _quizController?.dispose();
+
     _learnController = LearnController(
       phrases: phrases,
       pronunciation: _pronunciationController,
@@ -214,6 +211,33 @@ class SessionController extends ChangeNotifier {
       phrases: phrases,
       pronunciation: _pronunciationController,
     )..addListener(_forwardNotification);
+  }
+
+  String? _phraseValidationError(List<Phrase> phrases) {
+    if (phrases.map((phrase) => phrase.target).toSet().length < 4) {
+      return 'At least four phrases with distinct translations are required';
+    }
+    if (!phrases.any((phrase) => !phrase.isNew)) {
+      return 'At least one learned phrase is required for the quiz';
+    }
+    return null;
+  }
+
+  Future<void> _refreshPhrases() async {
+    if (_isRefreshingPhrases) return;
+    _isRefreshingPhrases = true;
+    try {
+      final result = await _api.fetchPhrases();
+      if (_disposed || status != SessionStatus.menu) return;
+
+      final phrases = result.phrases;
+      if (phrases == null || _phraseValidationError(phrases) != null) return;
+
+      _initializeFeatures(phrases);
+      notifyListeners();
+    } finally {
+      _isRefreshingPhrases = false;
+    }
   }
 
   @override
@@ -237,6 +261,7 @@ class SessionController extends ChangeNotifier {
   void onMenu() {
     status = SessionStatus.menu;
     notifyListeners();
+    unawaited(_refreshPhrases());
   }
 
   void _onLearn() {

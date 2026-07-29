@@ -19,6 +19,7 @@ class QuizController extends ChangeNotifier {
   int? wrongHighlightIndex;
   QuizState state = QuizState.guessing;
   bool showPronunciationButtons = false;
+  bool _disposed = false;
   Audio? _audio;
   final PronunciationController pronunciation;
 
@@ -60,6 +61,7 @@ class QuizController extends ChangeNotifier {
     notifyListeners();
 
     await Future.delayed(const Duration(seconds: 1));
+    if (_disposed) return;
     state = QuizState.guessing;
     correctHighlightIndex = null;
     wrongHighlightIndex = null;
@@ -81,5 +83,11 @@ class QuizController extends ChangeNotifier {
       numberOfOptions: numberOfOptions,
       distractorPool: phrases,
     );
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 }
