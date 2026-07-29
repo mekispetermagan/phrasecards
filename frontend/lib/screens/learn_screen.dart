@@ -7,7 +7,7 @@ class LearnScreen extends StatelessWidget {
   final LearnViewData viewData;
   final VoidCallback onBack;
   final VoidCallback turn;
-  final VoidCallback next;
+  final Future<void> Function() next;
   final Future<void> Function() playAudio;
 
   const LearnScreen({

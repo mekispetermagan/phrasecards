@@ -63,24 +63,25 @@ class PhraseCard extends StatelessWidget {
                         color: cs.onPrimary,
                       ),
                     ),
-                  PositionedDirectional(
-                    top: 0,
-                    start: 0,
-                    child: Padding(
-                      padding: EdgeInsetsGeometry.all(24),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(999),
-                          color: cs.tertiaryContainer,
-                        ),
-                        padding: EdgeInsets.all(12),
-                        child: Text(
-                          "New",
-                          // style: TextStyle(fontWeight: FontWeight.w600),
+                  if (phrase.isNew)
+                    PositionedDirectional(
+                      top: 0,
+                      start: 0,
+                      child: Padding(
+                        padding: EdgeInsetsGeometry.all(24),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(999),
+                            color: cs.tertiaryContainer,
+                          ),
+                          padding: EdgeInsets.all(12),
+                          child: Text(
+                            "New",
+                            // style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
                         ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),

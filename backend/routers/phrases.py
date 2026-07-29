@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -30,3 +30,20 @@ def get_phrases(db: DbSession):
         )
         for phrase in phrases
     ]
+
+
+@router.patch(
+    "/phrases/{phrase_id}/seen",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def mark_phrase_seen(phrase_id: int, db: DbSession) -> Response:
+    phrase = db.get(Phrase, phrase_id)
+    if phrase is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Phrase not found",
+        )
+
+    phrase.new = False
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

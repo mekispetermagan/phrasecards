@@ -24,4 +24,13 @@ class Phrase {
       audioPath: json['audio_path'] as String?,
     );
   }
+
+  Phrase copyWith({bool? isNew}) => Phrase(
+    id: id,
+    source: source,
+    target: target,
+    rating: rating,
+    isNew: isNew ?? this.isNew,
+    audioPath: audioPath,
+  );
 }

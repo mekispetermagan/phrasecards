@@ -94,7 +94,7 @@ class SessionController extends ChangeNotifier {
 
   void learnTurnCard() => _learn.turnCard();
 
-  void learnNext() => _learn.next();
+  Future<void> learnNext() => _learn.next();
 
   Future<void> learnPlayAudio() => _learn.playAudio();
 
@@ -185,6 +185,13 @@ class SessionController extends ChangeNotifier {
       return;
     }
 
+    if (!phrases.any((phrase) => !phrase.isNew)) {
+      errorMessage = 'At least one learned phrase is required for the quiz';
+      status = SessionStatus.error;
+      notifyListeners();
+      return;
+    }
+
     _initializeFeatures(phrases);
     status = SessionStatus.menu;
     notifyListeners();
@@ -200,6 +207,7 @@ class SessionController extends ChangeNotifier {
     _learnController = LearnController(
       phrases: phrases,
       pronunciation: _pronunciationController,
+      progressApi: _api,
     )..addListener(_forwardNotification);
 
     _quizController = QuizController(

@@ -26,7 +26,10 @@ class QuizController extends ChangeNotifier {
     _generateQuestion();
   }
 
-  Phrase get currentPhrase => phrases[_counter % phrases.length];
+  List<Phrase> get _questionPhrases =>
+      phrases.where((phrase) => !phrase.isNew).toList();
+  Phrase get currentPhrase =>
+      _questionPhrases[_counter % _questionPhrases.length];
   int get counter => _counter;
   int get score => _score;
   List<PronunciationData> get optionPronunciations => [

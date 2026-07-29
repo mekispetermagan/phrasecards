@@ -58,7 +58,11 @@ class PhraseRequestListResult {
     : requests = null;
 }
 
-class PhrasesApi {
+abstract interface class PhraseProgressApi {
+  Future<bool> markPhraseSeen(int phraseId);
+}
+
+class PhrasesApi implements PhraseProgressApi {
   final http.Client _client;
   final Map<String, String> _headers;
 
@@ -93,6 +97,18 @@ class PhrasesApi {
         return const PhraseListResult.failure(failure: Failure.invalidData);
       }
       return const PhraseListResult.failure(failure: Failure.networkError);
+    }
+  }
+
+  @override
+  Future<bool> markPhraseSeen(int phraseId) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/phrases/$phraseId/seen');
+
+    try {
+      final response = await _client.patch(uri, headers: _headers);
+      return response.statusCode == 204;
+    } catch (_) {
+      return false;
     }
   }
 }

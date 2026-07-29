@@ -76,6 +76,26 @@ void main() {
     expect(result.failure, Failure.networkError);
   });
 
+  test('markPhraseSeen patches the phrase progress endpoint', () async {
+    final client = MockClient((request) async {
+      expect(request.method, 'PATCH');
+      expect(request.url.path, '/api/phrases/7/seen');
+      return http.Response('', 204);
+    });
+
+    final marked = await PhrasesApi(client: client).markPhraseSeen(7);
+
+    expect(marked, isTrue);
+  });
+
+  test('markPhraseSeen reports an unsuccessful response', () async {
+    final client = MockClient((_) async => http.Response('not found', 404));
+
+    final marked = await PhrasesApi(client: client).markPhraseSeen(7);
+
+    expect(marked, isFalse);
+  });
+
   test("fetchRequests returns ids and sources", () async {
     final client = MockClient((request) async {
       expect(request.method, "GET");
