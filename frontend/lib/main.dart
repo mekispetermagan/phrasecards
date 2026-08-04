@@ -94,6 +94,13 @@ class _AppRootState extends State<AppRoot> {
             _sessionController.quizSetShowPronunciationButtons,
       ),
 
+      SessionStatus.memory => MemoryScreen(
+        viewData: _sessionController.memoryViewData,
+        onBack: _sessionController.onMenu,
+        onSelect: _sessionController.memorySelect,
+        onNewGame: _sessionController.memoryStartNewGame,
+      ),
+
       SessionStatus.request => RequestScreen(
         viewData: _sessionController.requestViewData,
         onBack: _sessionController.onMenu,

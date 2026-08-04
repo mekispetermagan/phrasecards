@@ -1,3 +1,4 @@
+import 'memory.dart';
 import 'phrase.dart';
 import 'phrase_request.dart';
 import 'pronunciation.dart';
@@ -36,6 +37,18 @@ class QuizViewData {
     required this.wrongHighlightIndex,
     required this.optionPronunciations,
     required this.showPronunciationButtons,
+  });
+}
+
+class MemoryViewData {
+  final List<MemoryCardData> cards;
+  final bool canPlay;
+  final bool isComplete;
+
+  const MemoryViewData({
+    required this.cards,
+    required this.canPlay,
+    required this.isComplete,
   });
 }
 

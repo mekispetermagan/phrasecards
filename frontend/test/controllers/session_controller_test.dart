@@ -255,7 +255,9 @@ void main() {
     addTearDown(controller.dispose);
     await _waitForStatus(controller, SessionStatus.menu);
 
-    controller.menuItems[2].$2();
+    controller.menuItems
+        .singleWhere((item) => item.$1 == 'Request a phrase')
+        .$2();
     expect(controller.status, SessionStatus.request);
 
     controller.requestUpdateSource("Good afternoon!");
@@ -302,7 +304,9 @@ void main() {
     addTearDown(controller.dispose);
     await _waitForStatus(controller, SessionStatus.menu);
 
-    controller.menuItems[3].$2();
+    controller.menuItems
+        .singleWhere((item) => item.$1 == 'Resolve a request')
+        .$2();
     for (var attempt = 0; attempt < 20; attempt++) {
       if (controller.requestListViewData.status == RequestListStatus.ready) {
         break;

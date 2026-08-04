@@ -7,6 +7,7 @@ import '../models/phrase.dart';
 import '../models/phrase_request.dart';
 import '../models/view_data.dart';
 import 'learn_controller.dart';
+import 'memory_controller.dart';
 import 'pronunciation_controller.dart';
 import 'quiz_controller.dart';
 import 'request_submission_controller.dart';
@@ -18,6 +19,7 @@ enum SessionStatus {
   menu,
   learn,
   quiz,
+  memory,
   request,
   resolve,
   resolveForm,
@@ -28,6 +30,7 @@ enum SessionNotice { requestSubmitted }
 class SessionController extends ChangeNotifier {
   LearnController? _learnController;
   QuizController? _quizController;
+  MemoryController? _memoryController;
   late final RequestSubmissionController _requestController;
   late final ResolutionController _resolutionController;
   final PronunciationController _pronunciationController;
@@ -42,6 +45,7 @@ class SessionController extends ChangeNotifier {
   late final List<(String, VoidCallback)> menuItems = [
     ("Learn phrases", _onLearn),
     ("Play quiz", _onQuiz),
+    ("Memory game", _onMemory),
     ("Request a phrase", _onRequest),
     ("Resolve a request", _onResolve),
   ];
@@ -76,6 +80,13 @@ class SessionController extends ChangeNotifier {
         ));
   }
 
+  MemoryController get _memory {
+    return _memoryController ??
+        (throw StateError(
+          'MemoryController accessed before session initialization',
+        ));
+  }
+
   LearnViewData get learnViewData => LearnViewData(
     phrase: _learn.currentPhrase,
     isTurned: _learn.cardIsTurned,
@@ -93,6 +104,12 @@ class SessionController extends ChangeNotifier {
     showPronunciationButtons: _quiz.showPronunciationButtons,
   );
 
+  MemoryViewData get memoryViewData => MemoryViewData(
+    cards: _memory.cards,
+    canPlay: _memory.canPlay,
+    isComplete: _memory.isComplete,
+  );
+
   void learnTurnCard() => _learn.turnCard();
 
   Future<void> learnNext() => _learn.next();
@@ -106,6 +123,10 @@ class SessionController extends ChangeNotifier {
 
   void quizSetShowPronunciationButtons(bool value) =>
       _quiz.setShowPronunciationButtons(value);
+
+  Future<void> memorySelect(int cardId) => _memory.select(cardId);
+
+  void memoryStartNewGame() => _memory.startNewGame();
 
   RequestSubmissionViewData get requestViewData => _requestController.viewData;
 
@@ -198,8 +219,10 @@ class SessionController extends ChangeNotifier {
   void _initializeFeatures(List<Phrase> phrases) {
     _learnController?.removeListener(_forwardNotification);
     _quizController?.removeListener(_forwardNotification);
+    _memoryController?.removeListener(_forwardNotification);
     _learnController?.dispose();
     _quizController?.dispose();
+    _memoryController?.dispose();
 
     _learnController = LearnController(
       phrases: phrases,
@@ -211,6 +234,10 @@ class SessionController extends ChangeNotifier {
       phrases: phrases,
       pronunciation: _pronunciationController,
     )..addListener(_forwardNotification);
+
+    _memoryController = MemoryController(phrases: phrases)
+      ..addListener(_forwardNotification);
+
   }
 
   String? _phraseValidationError(List<Phrase> phrases) {
@@ -245,12 +272,14 @@ class SessionController extends ChangeNotifier {
     _disposed = true;
     _learnController?.removeListener(_forwardNotification);
     _quizController?.removeListener(_forwardNotification);
+    _memoryController?.removeListener(_forwardNotification);
     _requestController.removeListener(_forwardNotification);
     _resolutionController.removeListener(_forwardNotification);
     _pronunciationController.removeListener(_forwardNotification);
 
     _learnController?.dispose();
     _quizController?.dispose();
+    _memoryController?.dispose();
     _requestController.dispose();
     _resolutionController.dispose();
     _pronunciationController.dispose();
@@ -271,6 +300,11 @@ class SessionController extends ChangeNotifier {
 
   void _onQuiz() {
     status = SessionStatus.quiz;
+    notifyListeners();
+  }
+
+  void _onMemory() {
+    status = SessionStatus.memory;
     notifyListeners();
   }
 
