@@ -1,10 +1,12 @@
-import 'package:flutter/foundation.dart';
 import 'dart:async';
 
-import '../models/phrase.dart';
-import '../models/quiz.dart';
+import 'package:flutter/foundation.dart';
+
 import '../audio/audio.dart';
+import '../models/phrase.dart';
 import '../models/pronunciation.dart';
+import '../models/quiz.dart';
+import '../storage/phrase_view_store.dart';
 import 'pronunciation_controller.dart';
 
 enum QuizState { guessing, feedbackCorrect, feedbackWrong }
@@ -12,34 +14,58 @@ enum QuizState { guessing, feedbackCorrect, feedbackWrong }
 class QuizController extends ChangeNotifier {
   final int numberOfOptions = 4;
   final List<Phrase> phrases;
+  final PhraseViewStore viewStore;
+  final PronunciationController pronunciation;
   int _counter = 0;
   int _score = 0;
-  late QuizQuestion currentQuestion;
+  QuizQuestion? currentQuestion;
   int? correctHighlightIndex;
   int? wrongHighlightIndex;
   QuizState state = QuizState.guessing;
   bool showPronunciationButtons = false;
   bool _disposed = false;
   Audio? _audio;
-  final PronunciationController pronunciation;
 
-  QuizController({required this.phrases, required this.pronunciation}) {
+  QuizController({
+    required this.phrases,
+    required this.viewStore,
+    required this.pronunciation,
+  }) {
     _generateQuestion();
   }
 
   List<Phrase> get _questionPhrases =>
-      phrases.where((phrase) => !phrase.isNew).toList();
-  Phrase get currentPhrase =>
-      _questionPhrases[_counter % _questionPhrases.length];
+      phrases.where((phrase) => viewStore.viewsFor(phrase.id) > 3).toList();
+
+  Phrase? get currentPhrase {
+    final questionPhrases = _questionPhrases;
+    if (questionPhrases.isEmpty) return null;
+    return questionPhrases[_counter % questionPhrases.length];
+  }
+
   int get counter => _counter;
   int get score => _score;
   List<PronunciationData> get optionPronunciations => [
-    for (final option in currentQuestion.options)
+    for (final option in currentQuestion?.options ?? const <QuizOption>[])
       pronunciation.dataFor(option.audioPath),
   ];
 
-  Future<void> playOptionAudio(int optionIndex) =>
-      pronunciation.play(currentQuestion.options[optionIndex].audioPath);
+  Future<void> playOptionAudio(int optionIndex) {
+    final question = currentQuestion;
+    if (question == null || optionIndex >= question.options.length) {
+      return Future.value();
+    }
+    return pronunciation.play(question.options[optionIndex].audioPath);
+  }
+
+  void open() {
+    _counter = 0;
+    _score = 0;
+    correctHighlightIndex = null;
+    wrongHighlightIndex = null;
+    state = QuizState.guessing;
+    _generateQuestion();
+  }
 
   void setShowPronunciationButtons(bool value) {
     if (showPronunciationButtons == value) return;
@@ -48,7 +74,9 @@ class QuizController extends ChangeNotifier {
   }
 
   Future<void> submit(int guessIndex) async {
-    if (guessIndex == currentQuestion.correctIndex) {
+    final question = currentQuestion;
+    if (question == null) return;
+    if (guessIndex == question.correctIndex) {
       state = QuizState.feedbackCorrect;
       _score++;
       correctHighlightIndex = guessIndex;
@@ -59,13 +87,11 @@ class QuizController extends ChangeNotifier {
       (_audio ??= Audio()).playWrong();
     }
     notifyListeners();
-
     await Future.delayed(const Duration(seconds: 1));
     if (_disposed) return;
     state = QuizState.guessing;
     correctHighlightIndex = null;
     wrongHighlightIndex = null;
-
     _next();
   }
 
@@ -73,16 +99,18 @@ class QuizController extends ChangeNotifier {
     _counter++;
     _generateQuestion();
     state = QuizState.guessing;
-
     notifyListeners();
   }
 
   void _generateQuestion() {
-    currentQuestion = QuizQuestion.fromPool(
-      phrase: currentPhrase,
-      numberOfOptions: numberOfOptions,
-      distractorPool: phrases,
-    );
+    final phrase = currentPhrase;
+    currentQuestion = phrase == null
+        ? null
+        : QuizQuestion.fromPool(
+            phrase: phrase,
+            numberOfOptions: numberOfOptions,
+            distractorPool: phrases,
+          );
   }
 
   @override

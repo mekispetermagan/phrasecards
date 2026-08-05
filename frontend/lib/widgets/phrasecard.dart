@@ -63,7 +63,7 @@ class PhraseCard extends StatelessWidget {
                         color: cs.onPrimary,
                       ),
                     ),
-                  if (phrase.isNew)
+                  if (isNewPhrase)
                     PositionedDirectional(
                       top: 0,
                       start: 0,

@@ -2,6 +2,7 @@ export 'accents.dart';
 export 'phrase.dart';
 export 'phrase_request.dart';
 export 'letter_data.dart';
+export 'learn.dart';
 export 'memory.dart';
 export 'position.dart';
 export 'pronunciation.dart';

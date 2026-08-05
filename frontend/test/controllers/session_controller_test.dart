@@ -8,7 +8,9 @@ import 'package:phrasecards/audio/pronunciation_player.dart';
 import 'package:phrasecards/controllers/pronunciation_controller.dart';
 import 'package:phrasecards/controllers/session_controller.dart';
 import 'package:phrasecards/models/accents.dart';
+import 'package:phrasecards/models/learn.dart';
 import 'package:phrasecards/models/view_data.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const _fourPhrases = '''
 [
@@ -65,6 +67,13 @@ Future<void> _waitForStatus(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  setUp(() {
+    SharedPreferences.setMockInitialValues({
+      'phrase_view_counts_v1':
+          '{"1":4,"2":4,"3":4,"4":4,"5":4,"6":4,"7":4,"8":4}',
+    });
+  });
+
   test('starts in loading while the request is pending', () {
     final response = Completer<http.Response>();
     final api = PhrasesApi(client: MockClient((_) => response.future));
@@ -91,9 +100,12 @@ void main() {
 
     await _waitForStatus(controller, SessionStatus.menu);
 
-    expect(controller.learnViewData.phrase.source, 'One');
+    expect(
+      controller.learnViewData.phrase!.source,
+      isIn({'One', 'Two', 'Three', 'Four'}),
+    );
     expect(controller.learnViewData.isTurned, isFalse);
-    expect(controller.quizViewData.question.options, hasLength(4));
+    expect(controller.quizViewData.question!.options, hasLength(4));
     expect(controller.quizViewData.showPronunciationButtons, isFalse);
 
     controller.quizSetShowPronunciationButtons(false);
@@ -276,11 +288,16 @@ void main() {
       addTearDown(controller.dispose);
       await _waitForStatus(controller, SessionStatus.menu);
 
-      controller.menuItems.first.$2();
-      controller.onMenu();
+      controller.learnSetSelectedGroups({
+        PhraseGroup.learning,
+        PhraseGroup.practiced,
+      });
 
       expect(controller.status, SessionStatus.menu);
-      expect(controller.learnViewData.phrase.source, 'One');
+      expect(
+        controller.learnViewData.phrase!.source,
+        isIn({'One', 'Two', 'Three', 'Four'}),
+      );
 
       await Future<void>.delayed(Duration.zero);
       controller.onMenu();
@@ -295,11 +312,14 @@ void main() {
         ),
       );
       for (var attempt = 0; attempt < 20; attempt++) {
-        if (controller.learnViewData.phrase.source == 'Fresh one') break;
+        if (controller.learnViewData.phrase!.source.startsWith('Fresh ')) break;
         await Future<void>.delayed(Duration.zero);
       }
 
-      expect(controller.learnViewData.phrase.source, 'Fresh one');
+      expect(controller.learnViewData.selectedGroups, {
+        PhraseGroup.learning,
+        PhraseGroup.practiced,
+      });
     },
   );
 
@@ -326,7 +346,10 @@ void main() {
     await Future<void>.delayed(Duration.zero);
 
     expect(controller.status, SessionStatus.menu);
-    expect(controller.learnViewData.phrase.source, 'One');
+    expect(
+      controller.learnViewData.phrase!.source,
+      isIn({'One', 'Two', 'Three', 'Four'}),
+    );
     expect(fetches, 2);
   });
 

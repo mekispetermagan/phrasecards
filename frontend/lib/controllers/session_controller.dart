@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../api/api.dart';
+import '../models/learn.dart';
 import '../models/phrase.dart';
 import '../models/phrase_request.dart';
+import '../storage/phrase_view_store.dart';
 import '../models/view_data.dart';
 import 'learn_controller.dart';
 import 'memory_controller.dart';
@@ -37,6 +39,7 @@ class SessionController extends ChangeNotifier {
   late final RequestSubmissionController _requestController;
   late final ResolutionController _resolutionController;
   final PronunciationController _pronunciationController;
+  final PhraseViewStore _viewStore;
 
   final PhrasesApi _api;
   SessionStatus status = SessionStatus.loading;
@@ -58,9 +61,13 @@ class SessionController extends ChangeNotifier {
     PhrasesApi? api,
     RequestsApi? requestsApi,
     PronunciationController? pronunciationController,
+    PhraseViewRepository? phraseViewRepository,
   }) : _api = api ?? PhrasesApi(),
        _pronunciationController =
-           pronunciationController ?? PronunciationController() {
+           pronunciationController ?? PronunciationController(),
+       _viewStore = PhraseViewStore(
+         phraseViewRepository ?? SharedPreferencesPhraseViewRepository(),
+       ) {
     final requestApi = requestsApi ?? RequestsApi();
     _requestController = RequestSubmissionController(requestApi)
       ..addListener(_forwardNotification);
@@ -101,7 +108,8 @@ class SessionController extends ChangeNotifier {
   LearnViewData get learnViewData => LearnViewData(
     phrase: _learn.currentPhrase,
     isTurned: _learn.cardIsTurned,
-    isNew: _learn.currentPhrase.isNew,
+    isNew: _learn.isCurrentPhraseNew,
+    selectedGroups: _learn.selectedGroups,
     pronunciation: _learn.pronunciationData,
   );
 
@@ -133,6 +141,9 @@ class SessionController extends ChangeNotifier {
   Future<void> learnNext() => _learn.next();
 
   Future<void> learnPlayAudio() => _learn.playAudio();
+
+  void learnSetSelectedGroups(Set<PhraseGroup> groups) =>
+      _learn.setSelectedGroups(groups);
 
   Future<void> quizSubmit(int guessIndex) => _quiz.submit(guessIndex);
 
@@ -229,6 +240,9 @@ class SessionController extends ChangeNotifier {
       return;
     }
 
+    await _viewStore.load();
+    if (_disposed) return;
+
     final validationError = _phraseValidationError(phrases);
     if (validationError != null) {
       errorMessage = validationError;
@@ -249,6 +263,7 @@ class SessionController extends ChangeNotifier {
   }
 
   void _initializeFeatures(List<Phrase> phrases) {
+    final selectedLearnGroups = _learnController?.selectedGroups;
     _learnController?.removeListener(_forwardNotification);
     _quizController?.removeListener(_forwardNotification);
     _memoryController?.removeListener(_forwardNotification);
@@ -261,11 +276,13 @@ class SessionController extends ChangeNotifier {
     _learnController = LearnController(
       phrases: phrases,
       pronunciation: _pronunciationController,
-      progressApi: _api,
+      viewStore: _viewStore,
+      selectedGroups: selectedLearnGroups,
     )..addListener(_forwardNotification);
 
     _quizController = QuizController(
       phrases: phrases,
+      viewStore: _viewStore,
       pronunciation: _pronunciationController,
     )..addListener(_forwardNotification);
 
@@ -283,9 +300,6 @@ class SessionController extends ChangeNotifier {
   String? _phraseValidationError(List<Phrase> phrases) {
     if (phrases.map((phrase) => phrase.target).toSet().length < 4) {
       return 'At least four phrases with distinct translations are required';
-    }
-    if (!phrases.any((phrase) => !phrase.isNew)) {
-      return 'At least one learned phrase is required for the quiz';
     }
     return null;
   }
@@ -341,6 +355,7 @@ class SessionController extends ChangeNotifier {
   }
 
   void _onQuiz() {
+    _quiz.open();
     status = SessionStatus.quiz;
     notifyListeners();
   }

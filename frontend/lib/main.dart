@@ -83,6 +83,7 @@ class _AppRootState extends State<AppRoot> {
         turn: _sessionController.learnTurnCard,
         next: _sessionController.learnNext,
         playAudio: _sessionController.learnPlayAudio,
+        setSelectedGroups: _sessionController.learnSetSelectedGroups,
       ),
 
       SessionStatus.quiz => QuizScreen(

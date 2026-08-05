@@ -1,13 +1,15 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:phrasecards/api/api.dart';
 import 'package:phrasecards/audio/pronunciation_player.dart';
 import 'package:phrasecards/controllers/learn_controller.dart';
 import 'package:phrasecards/controllers/pronunciation_controller.dart';
+import 'package:phrasecards/models/learn.dart';
 import 'package:phrasecards/models/phrase.dart';
+import 'package:phrasecards/storage/phrase_view_store.dart';
 
-class FakePronunciationPlayer implements PronunciationPlayer {
+class _FakePronunciationPlayer implements PronunciationPlayer {
   final Completer<void> playback = Completer<void>();
   final List<String> paths = [];
 
@@ -21,137 +23,154 @@ class FakePronunciationPlayer implements PronunciationPlayer {
   Future<void> stop() async {}
 }
 
-class FakePhraseProgressApi implements PhraseProgressApi {
-  final bool succeeds;
-  final List<int> markedIds = [];
+class _MemoryPhraseViewRepository implements PhraseViewRepository {
+  Map<int, int> counts;
+  final saved = <Map<int, int>>[];
 
-  FakePhraseProgressApi({this.succeeds = true});
+  _MemoryPhraseViewRepository([Map<int, int>? counts])
+    : counts = Map.of(counts ?? {});
 
   @override
-  Future<bool> markPhraseSeen(int phraseId) async {
-    markedIds.add(phraseId);
-    return succeeds;
+  Future<Map<int, int>> load() async => Map.of(counts);
+
+  @override
+  Future<void> save(Map<int, int> viewCounts) async {
+    counts = Map.of(viewCounts);
+    saved.add(Map.of(viewCounts));
   }
 }
 
-void main() {
-  const phrase = Phrase(
-    id: 3,
-    source: 'Thank you',
-    target: 'Köszönöm',
-    rating: 3,
-    isNew: false,
-    audioPath: '/audio/phrase-3-hash.mp3',
-  );
+Phrase _phrase(int id, {String? source, String? target, String? audioPath}) =>
+    Phrase(
+      id: id,
+      source: source ?? 'Source $id',
+      target: target ?? 'Target $id',
+      rating: 3,
+      isNew: true,
+      audioPath: audioPath,
+    );
 
+Future<PhraseViewStore> _store([Map<int, int>? counts]) async {
+  final store = PhraseViewStore(_MemoryPhraseViewRepository(counts));
+  await store.load();
+  return store;
+}
+
+void main() {
   test(
     'exposes playback progress and delegates the backend audio path',
     () async {
-      final player = FakePronunciationPlayer();
+      final player = _FakePronunciationPlayer();
       final pronunciation = PronunciationController(player: player);
-      final phraseProgressApi = FakePhraseProgressApi();
       final controller = LearnController(
-        phrases: [phrase],
+        phrases: [_phrase(3, audioPath: '/audio/phrase.mp3')],
         pronunciation: pronunciation,
-        progressApi: phraseProgressApi,
+        viewStore: await _store(),
       );
       addTearDown(controller.dispose);
       addTearDown(pronunciation.dispose);
 
       final playback = controller.playAudio();
-      expect(controller.pronunciationData.isPlaying, isTrue);
-      expect(player.paths, ['/audio/phrase-3-hash.mp3']);
+      expect(controller.pronunciationData!.isPlaying, isTrue);
+      expect(player.paths, ['/audio/phrase.mp3']);
 
       player.playback.complete();
       await playback;
 
-      expect(controller.pronunciationData.isPlaying, isFalse);
-      expect(controller.pronunciationData.error, isNull);
+      expect(controller.pronunciationData!.isPlaying, isFalse);
+      expect(controller.pronunciationData!.error, isNull);
     },
   );
 
   test('phrases without audio remain fully usable', () async {
-    final player = FakePronunciationPlayer();
+    final player = _FakePronunciationPlayer();
     final pronunciation = PronunciationController(player: player);
-    final phraseProgressApi = FakePhraseProgressApi();
     final controller = LearnController(
-      phrases: [
-        const Phrase(
-          id: 4,
-          source: 'Missing',
-          target: 'Hiányzik',
-          rating: 3,
-          isNew: false,
-          audioPath: null,
-        ),
-      ],
+      phrases: [_phrase(4)],
       pronunciation: pronunciation,
-      progressApi: phraseProgressApi,
+      viewStore: await _store(),
     );
     addTearDown(controller.dispose);
     addTearDown(pronunciation.dispose);
 
     await controller.playAudio();
-
     expect(player.paths, isEmpty);
+
     controller.turnCard();
     expect(controller.cardIsTurned, isTrue);
   });
 
-  test('marks a new phrase seen locally before advancing', () async {
+  test('counts completed views and keeps New through three views', () async {
+    final repository = _MemoryPhraseViewRepository();
+    final store = PhraseViewStore(repository);
+    await store.load();
     final pronunciation = PronunciationController(
-      player: FakePronunciationPlayer(),
+      player: _FakePronunciationPlayer(),
     );
-    final phraseProgressApi = FakePhraseProgressApi();
-    final phrases = [
-      const Phrase(
-        id: 7,
-        source: 'New',
-        target: 'Új',
-        rating: 3,
-        isNew: true,
-        audioPath: null,
-      ),
-      phrase,
-    ];
     final controller = LearnController(
-      phrases: phrases,
+      phrases: [_phrase(7)],
       pronunciation: pronunciation,
-      progressApi: phraseProgressApi,
+      viewStore: store,
     );
     addTearDown(controller.dispose);
     addTearDown(pronunciation.dispose);
+
+    expect(controller.isCurrentPhraseNew, isTrue);
+    for (var views = 1; views <= 3; views++) {
+      await controller.next();
+      expect(store.viewsFor(7), views);
+      expect(controller.isCurrentPhraseNew, isTrue);
+    }
+
     await controller.next();
-    expect(phraseProgressApi.markedIds, [7]);
-    expect(phrases.first.isNew, isFalse);
-    expect(controller.currentPhrase, phrase);
+    expect(store.viewsFor(7), 4);
+    expect(controller.isCurrentPhraseNew, isFalse);
+    expect(repository.saved, hasLength(4));
   });
 
-  test('advances but keeps new state when marking seen fails', () async {
+  test('merges selected groups and puts locally new phrases first', () async {
     final pronunciation = PronunciationController(
-      player: FakePronunciationPlayer(),
+      player: _FakePronunciationPlayer(),
     );
-    final phraseProgressApi = FakePhraseProgressApi(succeeds: false);
-    final phrases = [
-      const Phrase(
-        id: 7,
-        source: 'New',
-        target: 'Új',
-        rating: 3,
-        isNew: true,
-        audioPath: null,
-      ),
-      phrase,
-    ];
     final controller = LearnController(
-      phrases: phrases,
+      phrases: [_phrase(1), _phrase(2), _phrase(3), _phrase(4)],
       pronunciation: pronunciation,
-      progressApi: phraseProgressApi,
+      viewStore: await _store({1: 0, 2: 4, 3: 13, 4: 25}),
+      random: Random(1),
     );
     addTearDown(controller.dispose);
     addTearDown(pronunciation.dispose);
-    await controller.next();
-    expect(phrases.first.isNew, isTrue);
-    expect(controller.currentPhrase, phrase);
+
+    expect(controller.currentPhrase!.id, 1);
+
+    controller.setSelectedGroups({
+      PhraseGroup.practiced,
+      PhraseGroup.established,
+    });
+    expect({3, 4}, contains(controller.currentPhrase!.id));
+
+    controller.setSelectedGroups({PhraseGroup.practiced});
+    expect(controller.currentPhrase!.id, 3);
+
+    controller.setSelectedGroups({PhraseGroup.learning});
+    expect(controller.currentPhrase!.id, 1);
+  });
+
+  test('shows no phrase when selected groups contain no matches', () async {
+    final pronunciation = PronunciationController(
+      player: _FakePronunciationPlayer(),
+    );
+    final controller = LearnController(
+      phrases: [_phrase(1)],
+      pronunciation: pronunciation,
+      viewStore: await _store(),
+    );
+    addTearDown(controller.dispose);
+    addTearDown(pronunciation.dispose);
+
+    controller.setSelectedGroups({PhraseGroup.established});
+
+    expect(controller.currentPhrase, isNull);
+    expect(controller.pronunciationData, isNull);
   });
 }

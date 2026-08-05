@@ -1,58 +1,103 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 
-import '../api/api.dart';
+import '../models/learn.dart';
 import '../models/phrase.dart';
 import '../models/pronunciation.dart';
+import '../storage/phrase_view_store.dart';
 import 'pronunciation_controller.dart';
 
 class LearnController extends ChangeNotifier {
-  int _counter = 0;
+  final List<Phrase> phrases;
+  final PronunciationController pronunciation;
+  final PhraseViewStore viewStore;
+  final Random _random;
+
+  final Set<PhraseGroup> _selectedGroups;
+  List<Phrase> _queue = [];
   bool _cardIsTurned = false;
   bool _isAdvancing = false;
   bool _disposed = false;
-  final List<Phrase> phrases;
-  final PronunciationController pronunciation;
-  final PhraseProgressApi progressApi;
 
   LearnController({
     required this.phrases,
     required this.pronunciation,
-    required this.progressApi,
-  });
+    required this.viewStore,
+    Set<PhraseGroup>? selectedGroups,
+    Random? random,
+  }) : _selectedGroups = Set.of(selectedGroups ?? PhraseGroup.values),
+       _random = random ?? Random() {
+    _reshuffle();
+  }
 
-  Phrase get currentPhrase => phrases[_counter % phrases.length];
-
+  Phrase? get currentPhrase => _queue.firstOrNull;
   bool get cardIsTurned => _cardIsTurned;
-  PronunciationData get pronunciationData =>
-      pronunciation.dataFor(currentPhrase.audioPath);
+  bool get isCurrentPhraseNew {
+    final phrase = currentPhrase;
+    return phrase != null && isLocallyNew(viewStore.viewsFor(phrase.id));
+  }
+
+  Set<PhraseGroup> get selectedGroups => Set.unmodifiable(_selectedGroups);
+
+  PronunciationData? get pronunciationData {
+    final phrase = currentPhrase;
+    return phrase == null ? null : pronunciation.dataFor(phrase.audioPath);
+  }
+
+  void setSelectedGroups(Set<PhraseGroup> groups) {
+    if (groups.isEmpty || setEquals(groups, _selectedGroups)) return;
+    _selectedGroups
+      ..clear()
+      ..addAll(groups);
+    _cardIsTurned = false;
+    _reshuffle();
+    notifyListeners();
+  }
 
   void turnCard() {
+    if (currentPhrase == null) return;
     _cardIsTurned = !_cardIsTurned;
-    if (cardIsTurned) {
-      playAudio();
-    }
+    if (_cardIsTurned) playAudio();
     notifyListeners();
   }
 
   Future<void> next() async {
     if (_isAdvancing) return;
+    final phrase = currentPhrase;
+    if (phrase == null) return;
 
-    final phraseIndex = _counter % phrases.length;
-    final phrase = phrases[phraseIndex];
-    if (phrase.isNew) {
-      _isAdvancing = true;
-      final markedSeen = await progressApi.markPhraseSeen(phrase.id);
-      _isAdvancing = false;
-      if (_disposed) return;
-      if (markedSeen) phrases[phraseIndex] = phrase.copyWith(isNew: false);
-    }
+    _isAdvancing = true;
+    await viewStore.increment(phrase.id);
+    _isAdvancing = false;
+    if (_disposed) return;
 
-    _counter++;
+    _queue.removeAt(0);
+    if (_queue.isEmpty) _reshuffle();
     _cardIsTurned = false;
     notifyListeners();
   }
 
-  Future<void> playAudio() => pronunciation.play(currentPhrase.audioPath);
+  Future<void> playAudio() => pronunciation.play(currentPhrase?.audioPath);
+
+  void _reshuffle() {
+    final eligible = [
+      for (final phrase in phrases)
+        if (_selectedGroups.any(
+          (group) => group.includes(viewStore.viewsFor(phrase.id)),
+        ))
+          phrase,
+    ];
+    final newPhrases = [
+      for (final phrase in eligible)
+        if (isLocallyNew(viewStore.viewsFor(phrase.id))) phrase,
+    ]..shuffle(_random);
+    final remaining = [
+      for (final phrase in eligible)
+        if (!isLocallyNew(viewStore.viewsFor(phrase.id))) phrase,
+    ]..shuffle(_random);
+    _queue = [...newPhrases, ...remaining];
+  }
 
   @override
   void dispose() {

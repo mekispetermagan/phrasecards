@@ -1,5 +1,6 @@
 import 'accents.dart';
 import 'letter_data.dart';
+import 'learn.dart';
 import 'memory.dart';
 import 'phrase.dart';
 import 'phrase_request.dart';
@@ -9,21 +10,23 @@ import 'quiz.dart';
 enum RequestListStatus { loading, ready, error }
 
 class LearnViewData {
-  final Phrase phrase;
+  final Phrase? phrase;
   final bool isTurned;
   final bool isNew;
-  final PronunciationData pronunciation;
+  final Set<PhraseGroup> selectedGroups;
+  final PronunciationData? pronunciation;
 
   const LearnViewData({
     required this.phrase,
     required this.isTurned,
     required this.isNew,
+    required this.selectedGroups,
     required this.pronunciation,
   });
 }
 
 class QuizViewData {
-  final QuizQuestion question;
+  final QuizQuestion? question;
   final int score;
   final int maxScore;
   final int? correctHighlightIndex;
