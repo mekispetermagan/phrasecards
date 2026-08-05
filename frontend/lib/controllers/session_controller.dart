@@ -10,6 +10,7 @@ import 'learn_controller.dart';
 import 'memory_controller.dart';
 import 'pronunciation_controller.dart';
 import 'quiz_controller.dart';
+import 'accents_controller.dart';
 import 'request_submission_controller.dart';
 import 'resolution_controller.dart';
 
@@ -19,6 +20,7 @@ enum SessionStatus {
   menu,
   learn,
   quiz,
+  accents,
   memory,
   request,
   resolve,
@@ -31,6 +33,7 @@ class SessionController extends ChangeNotifier {
   LearnController? _learnController;
   QuizController? _quizController;
   MemoryController? _memoryController;
+  AccentsController? _accentsController;
   late final RequestSubmissionController _requestController;
   late final ResolutionController _resolutionController;
   final PronunciationController _pronunciationController;
@@ -46,6 +49,7 @@ class SessionController extends ChangeNotifier {
     ("Learn phrases", _onLearn),
     ("Play quiz", _onQuiz),
     ("Memory game", _onMemory),
+    ("Fix the accents", _onAccents),
     ("Request a phrase", _onRequest),
     ("Resolve a request", _onResolve),
   ];
@@ -87,6 +91,13 @@ class SessionController extends ChangeNotifier {
         ));
   }
 
+  AccentsController get _accents {
+    return _accentsController ??
+        (throw StateError(
+          'AccentsController accessed before session initialization',
+        ));
+  }
+
   LearnViewData get learnViewData => LearnViewData(
     phrase: _learn.currentPhrase,
     isTurned: _learn.cardIsTurned,
@@ -102,6 +113,13 @@ class SessionController extends ChangeNotifier {
     wrongHighlightIndex: _quiz.wrongHighlightIndex,
     optionPronunciations: _quiz.optionPronunciations,
     showPronunciationButtons: _quiz.showPronunciationButtons,
+  );
+
+  AccentedViewData get accentedViewData => AccentedViewData(
+    accentedVowelData: _accents.accentedVowelData,
+    currentLetterData: _accents.currentLetterData,
+    pronunciation: _accents.pronunciationData,
+    phase: _accents.phase,
   );
 
   MemoryViewData get memoryViewData => MemoryViewData(
@@ -123,6 +141,20 @@ class SessionController extends ChangeNotifier {
 
   void quizSetShowPronunciationButtons(bool value) =>
       _quiz.setShowPronunciationButtons(value);
+
+  void accentsNext() {
+    if (_accents.next()) unawaited(_accents.playAudio());
+  }
+
+  void accentsOnDrop({
+    required String dragTargetId,
+    required String draggableLetter,
+  }) => _accents.onDrop(
+    dragTargetId: dragTargetId,
+    draggableLetter: draggableLetter,
+  );
+
+  Future<void> accentsPlayAudio() => _accents.playAudio();
 
   Future<void> memorySelect(int cardId) => _memory.select(cardId);
 
@@ -220,9 +252,11 @@ class SessionController extends ChangeNotifier {
     _learnController?.removeListener(_forwardNotification);
     _quizController?.removeListener(_forwardNotification);
     _memoryController?.removeListener(_forwardNotification);
+    _accentsController?.removeListener(_forwardNotification);
     _learnController?.dispose();
     _quizController?.dispose();
     _memoryController?.dispose();
+    _accentsController?.dispose();
 
     _learnController = LearnController(
       phrases: phrases,
@@ -235,9 +269,15 @@ class SessionController extends ChangeNotifier {
       pronunciation: _pronunciationController,
     )..addListener(_forwardNotification);
 
-    _memoryController = MemoryController(phrases: phrases)
-      ..addListener(_forwardNotification);
+    _memoryController = MemoryController(
+      phrases: phrases,
+      playPronunciation: _pronunciationController.play,
+    )..addListener(_forwardNotification);
 
+    _accentsController = AccentsController(
+      phrases: phrases,
+      pronunciation: _pronunciationController,
+    )..addListener(_forwardNotification);
   }
 
   String? _phraseValidationError(List<Phrase> phrases) {
@@ -273,6 +313,7 @@ class SessionController extends ChangeNotifier {
     _learnController?.removeListener(_forwardNotification);
     _quizController?.removeListener(_forwardNotification);
     _memoryController?.removeListener(_forwardNotification);
+    _accentsController?.removeListener(_forwardNotification);
     _requestController.removeListener(_forwardNotification);
     _resolutionController.removeListener(_forwardNotification);
     _pronunciationController.removeListener(_forwardNotification);
@@ -280,6 +321,7 @@ class SessionController extends ChangeNotifier {
     _learnController?.dispose();
     _quizController?.dispose();
     _memoryController?.dispose();
+    _accentsController?.dispose();
     _requestController.dispose();
     _resolutionController.dispose();
     _pronunciationController.dispose();
@@ -306,6 +348,12 @@ class SessionController extends ChangeNotifier {
   void _onMemory() {
     status = SessionStatus.memory;
     notifyListeners();
+  }
+
+  void _onAccents() {
+    status = SessionStatus.accents;
+    notifyListeners();
+    unawaited(_accents.playAudio());
   }
 
   void _onRequest() {

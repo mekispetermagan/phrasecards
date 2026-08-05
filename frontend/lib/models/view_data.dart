@@ -1,3 +1,5 @@
+import 'accents.dart';
+import 'letter_data.dart';
 import 'memory.dart';
 import 'phrase.dart';
 import 'phrase_request.dart';
@@ -37,6 +39,20 @@ class QuizViewData {
     required this.wrongHighlightIndex,
     required this.optionPronunciations,
     required this.showPronunciationButtons,
+  });
+}
+
+class AccentedViewData {
+  final List<List<LetterData>>? currentLetterData;
+  final List<LetterData> accentedVowelData;
+  final PronunciationData? pronunciation;
+  final AccentsPhase phase;
+
+  const AccentedViewData({
+    required this.accentedVowelData,
+    required this.currentLetterData,
+    required this.pronunciation,
+    required this.phase,
   });
 }
 

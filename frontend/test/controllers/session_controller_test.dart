@@ -4,7 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:phrasecards/api/api.dart';
+import 'package:phrasecards/audio/pronunciation_player.dart';
+import 'package:phrasecards/controllers/pronunciation_controller.dart';
 import 'package:phrasecards/controllers/session_controller.dart';
+import 'package:phrasecards/models/accents.dart';
 import 'package:phrasecards/models/view_data.dart';
 
 const _fourPhrases = '''
@@ -24,6 +27,27 @@ const _refreshedPhrases = '''
   {"id":8,"source":"Fresh four","target":"Friss négy","new":false,"rating":3}
 ]
 ''';
+
+const _phrasesWithAudio = '''
+[
+  {"id":1,"source":"One","target":"Egy","new":false,"rating":3,"audio_path":"/audio/one.mp3"},
+  {"id":2,"source":"Two","target":"Kettő","new":false,"rating":3,"audio_path":"/audio/two.mp3"},
+  {"id":3,"source":"Three","target":"Három","new":false,"rating":3,"audio_path":"/audio/three.mp3"},
+  {"id":4,"source":"Four","target":"Négy","new":false,"rating":3,"audio_path":"/audio/four.mp3"}
+]
+''';
+
+class _RecordingPronunciationPlayer implements PronunciationPlayer {
+  final playedPaths = <String>[];
+
+  @override
+  Future<void> play(String audioPath) async {
+    playedPaths.add(audioPath);
+  }
+
+  @override
+  Future<void> stop() async {}
+}
 
 Future<void> _waitForStatus(
   SessionController controller,
@@ -84,6 +108,80 @@ void main() {
     controller.learnTurnCard();
     expect(controller.learnViewData.isTurned, isTrue);
     expect(notifications, 2);
+  });
+
+  test('accents audio follows session entry and advancement only', () async {
+    final player = _RecordingPronunciationPlayer();
+    final pronunciation = PronunciationController(player: player);
+    final api = PhrasesApi(
+      client: MockClient(
+        (_) async => http.Response(
+          _phrasesWithAudio,
+          200,
+          headers: {'content-type': 'application/json; charset=utf-8'},
+        ),
+      ),
+    );
+    final controller = SessionController(
+      api: api,
+      pronunciationController: pronunciation,
+    );
+    addTearDown(controller.dispose);
+    await _waitForStatus(controller, SessionStatus.menu);
+
+    expect(player.playedPaths, isEmpty);
+
+    controller.menuItems
+        .singleWhere((item) => item.$1 == 'Fix the accents')
+        .$2();
+
+    expect(controller.status, SessionStatus.accents);
+    expect(player.playedPaths, hasLength(1));
+
+    controller.accentsNext();
+    expect(controller.accentedViewData.phase, AccentsPhase.solving);
+    expect(player.playedPaths, hasLength(1));
+
+    final hiddenLetter = controller.accentedViewData.currentLetterData!
+        .expand((word) => word)
+        .firstWhere((letter) => !letter.isRevealed);
+    controller.accentsOnDrop(
+      dragTargetId: hiddenLetter.id,
+      draggableLetter: hiddenLetter.letter,
+    );
+    expect(player.playedPaths, hasLength(1));
+
+    controller.accentsNext();
+
+    expect(player.playedPaths, hasLength(2));
+    expect(player.playedPaths.toSet(), hasLength(2));
+  });
+
+  test('accents automatic playback tolerates missing audio', () async {
+    final player = _RecordingPronunciationPlayer();
+    final pronunciation = PronunciationController(player: player);
+    final api = PhrasesApi(
+      client: MockClient(
+        (_) async => http.Response(
+          _fourPhrases,
+          200,
+          headers: {'content-type': 'application/json; charset=utf-8'},
+        ),
+      ),
+    );
+    final controller = SessionController(
+      api: api,
+      pronunciationController: pronunciation,
+    );
+    addTearDown(controller.dispose);
+    await _waitForStatus(controller, SessionStatus.menu);
+
+    controller.menuItems
+        .singleWhere((item) => item.$1 == 'Fix the accents')
+        .$2();
+    controller.accentsNext();
+
+    expect(player.playedPaths, isEmpty);
   });
 
   test('failed loading exposes an error state and message', () async {

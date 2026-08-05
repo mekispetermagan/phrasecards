@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -11,6 +12,7 @@ class MemoryController extends ChangeNotifier {
   final List<Phrase> phrases;
   final Random _random;
   final Duration revealDuration;
+  final Future<void> Function(String? audioPath) playPronunciation;
 
   List<MemoryCardData> _cards = const [];
   int? _firstCardId;
@@ -20,6 +22,7 @@ class MemoryController extends ChangeNotifier {
 
   MemoryController({
     required this.phrases,
+    required this.playPronunciation,
     Random? random,
     this.revealDuration = const Duration(milliseconds: 900),
   }) : _random = random ?? Random() {
@@ -53,12 +56,14 @@ class MemoryController extends ChangeNotifier {
             cardId: pairId * 2,
             pairId: pairId,
             text: selected[pairId].source,
+            audioPath: null,
             side: MemoryCardSide.source,
           ),
           MemoryCardData(
             cardId: pairId * 2 + 1,
             pairId: pairId,
             text: selected[pairId].target,
+            audioPath: selected[pairId].audioPath,
             side: MemoryCardSide.target,
           ),
         ],
@@ -76,9 +81,13 @@ class MemoryController extends ChangeNotifier {
 
     final selectedIndex = _cards.indexWhere((card) => card.cardId == cardId);
     if (selectedIndex == -1 || _cards[selectedIndex].isFaceUp) return;
+    final selectedCard = _cards[selectedIndex];
 
     _revealCounter++;
     _setState(cardId, MemoryCardState.revealed, revealOrder: _revealCounter);
+    if (selectedCard.side == MemoryCardSide.target) {
+      unawaited(playPronunciation(selectedCard.audioPath));
+    }
     final firstCardId = _firstCardId;
     if (firstCardId == null) {
       _firstCardId = cardId;

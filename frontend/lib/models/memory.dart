@@ -6,6 +6,7 @@ class MemoryCardData {
   final int cardId;
   final int pairId;
   final String text;
+  final String? audioPath;
   final MemoryCardSide side;
   final MemoryCardState state;
   final int revealOrder;
@@ -14,6 +15,7 @@ class MemoryCardData {
     required this.cardId,
     required this.pairId,
     required this.text,
+    required this.audioPath,
     required this.side,
     this.state = MemoryCardState.hidden,
     this.revealOrder = 0,
@@ -27,6 +29,7 @@ class MemoryCardData {
         cardId: cardId,
         pairId: pairId,
         text: text,
+        audioPath: audioPath,
         side: side,
         state: state ?? this.state,
         revealOrder: revealOrder ?? this.revealOrder,

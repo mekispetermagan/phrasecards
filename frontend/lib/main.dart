@@ -101,6 +101,14 @@ class _AppRootState extends State<AppRoot> {
         onNewGame: _sessionController.memoryStartNewGame,
       ),
 
+      SessionStatus.accents => AccentsScreen(
+        viewData: _sessionController.accentedViewData,
+        onBack: _sessionController.onMenu,
+        onNext: _sessionController.accentsNext,
+        onDrop: _sessionController.accentsOnDrop,
+        playAudio: _sessionController.accentsPlayAudio,
+      ),
+
       SessionStatus.request => RequestScreen(
         viewData: _sessionController.requestViewData,
         onBack: _sessionController.onMenu,

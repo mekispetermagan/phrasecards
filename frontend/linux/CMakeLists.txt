@@ -48,6 +48,11 @@ endfunction()
 
 # Flutter library and tool build rules.
 set(FLUTTER_MANAGED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/flutter")
+
+# Hide verbose CMake informational messages from Flutter plugins.
+# Cache scope is required because some plugins start nested CMake projects.
+# Warnings and errors remain visible.
+set(CMAKE_MESSAGE_LOG_LEVEL WARNING CACHE STRING "CMake message verbosity" FORCE)
 add_subdirectory(${FLUTTER_MANAGED_DIR})
 
 # System-level dependencies.
