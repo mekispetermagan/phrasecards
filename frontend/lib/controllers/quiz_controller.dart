@@ -1,115 +1,154 @@
-import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
-import '../audio/audio.dart';
 import '../models/phrase.dart';
 import '../models/pronunciation.dart';
 import '../models/quiz.dart';
 import '../storage/phrase_view_store.dart';
 import 'pronunciation_controller.dart';
 
-enum QuizState { guessing, feedbackCorrect, feedbackWrong }
+enum _QuizPhase { guessing, feedbackCorrect, feedbackWrong }
 
 class QuizController extends ChangeNotifier {
-  final int numberOfOptions = 4;
-  final List<Phrase> phrases;
-  final PhraseViewStore viewStore;
-  final PronunciationController pronunciation;
-  int _counter = 0;
+  static const int _numberOfOptions = 4;
+
+  final List<Phrase> _phrases;
+  final PhraseViewStore _viewStore;
+  final PronunciationController _pronunciation;
+  final Future<void> Function(String assetPath) _playFeedback;
+  final Duration _feedbackDuration;
+  final Random _random;
+
+  int _attemptCount = 0;
   int _score = 0;
-  QuizQuestion? currentQuestion;
-  int? correctHighlightIndex;
-  int? wrongHighlightIndex;
-  QuizState state = QuizState.guessing;
-  bool showPronunciationButtons = false;
+  QuizQuestion? _currentQuestion;
+  int? _correctHighlightIndex;
+  int? _wrongHighlightIndex;
+  _QuizPhase _phase = _QuizPhase.guessing;
+  bool _showPronunciationButtons = false;
   bool _disposed = false;
-  Audio? _audio;
 
   QuizController({
-    required this.phrases,
-    required this.viewStore,
-    required this.pronunciation,
-  }) {
+    required List<Phrase> phrases,
+    required PhraseViewStore phraseViewStore,
+    required PronunciationController pronunciationController,
+    required Future<void> Function(String assetPath) feedbackPlayer,
+    Duration minimumFeedbackDuration = const Duration(seconds: 1),
+    Random? random,
+  }) : _phrases = List.unmodifiable(phrases),
+       _viewStore = phraseViewStore,
+       _pronunciation = pronunciationController,
+       _playFeedback = feedbackPlayer,
+       _feedbackDuration = minimumFeedbackDuration,
+       _random = random ?? Random() {
     _generateQuestion();
   }
 
   List<Phrase> get _questionPhrases =>
-      phrases.where((phrase) => viewStore.viewsFor(phrase.id) > 3).toList();
+      _phrases.where((phrase) => _viewStore.viewsFor(phrase.id) > 3).toList();
 
   Phrase? get currentPhrase {
     final questionPhrases = _questionPhrases;
     if (questionPhrases.isEmpty) return null;
-    return questionPhrases[_counter % questionPhrases.length];
+    return questionPhrases[_attemptCount % questionPhrases.length];
   }
 
-  int get counter => _counter;
+  QuizQuestion? get currentQuestion => _currentQuestion;
+  int get attemptCount => _attemptCount;
   int get score => _score;
+  int? get correctHighlightIndex => _correctHighlightIndex;
+  int? get wrongHighlightIndex => _wrongHighlightIndex;
+  bool get showPronunciationButtons => _showPronunciationButtons;
+  Future<void> Function(int)? get submit =>
+      _phase == _QuizPhase.guessing && _currentQuestion != null
+      ? _submit
+      : null;
+
   List<PronunciationData> get optionPronunciations => [
-    for (final option in currentQuestion?.options ?? const <QuizOption>[])
-      pronunciation.dataFor(option.audioPath),
+    for (final option in _currentQuestion?.options ?? const <QuizOption>[])
+      _pronunciation.dataFor(option.audioPath),
   ];
 
   Future<void> playOptionAudio(int optionIndex) {
-    final question = currentQuestion;
-    if (question == null || optionIndex >= question.options.length) {
+    final question = _currentQuestion;
+    if (question == null ||
+        optionIndex < 0 ||
+        optionIndex >= question.options.length) {
       return Future.value();
     }
-    return pronunciation.play(question.options[optionIndex].audioPath);
+    return _pronunciation.play(question.options[optionIndex].audioPath);
   }
 
   void open() {
-    _counter = 0;
+    _attemptCount = 0;
     _score = 0;
-    correctHighlightIndex = null;
-    wrongHighlightIndex = null;
-    state = QuizState.guessing;
+    _correctHighlightIndex = null;
+    _wrongHighlightIndex = null;
+    _phase = _QuizPhase.guessing;
     _generateQuestion();
   }
 
   void setShowPronunciationButtons(bool value) {
-    if (showPronunciationButtons == value) return;
-    showPronunciationButtons = value;
+    if (_showPronunciationButtons == value) return;
+    _showPronunciationButtons = value;
     notifyListeners();
   }
 
-  Future<void> submit(int guessIndex) async {
-    final question = currentQuestion;
+  Future<void> _submit(int guessIndex) async {
+    if (_phase != _QuizPhase.guessing) return;
+    final question = _currentQuestion;
     if (question == null) return;
+    RangeError.checkValidIndex(guessIndex, question.options, 'guessIndex');
+
+    final String feedbackPath;
     if (guessIndex == question.correctIndex) {
-      state = QuizState.feedbackCorrect;
+      _phase = _QuizPhase.feedbackCorrect;
       _score++;
-      correctHighlightIndex = guessIndex;
-      (_audio ??= Audio()).playCorrect();
+      _correctHighlightIndex = guessIndex;
+      feedbackPath = 'assets/audio/correct.mp3';
     } else {
-      state = QuizState.feedbackWrong;
-      wrongHighlightIndex = guessIndex;
-      (_audio ??= Audio()).playWrong();
+      _phase = _QuizPhase.feedbackWrong;
+      _wrongHighlightIndex = guessIndex;
+      feedbackPath = 'assets/audio/wrong.mp3';
     }
     notifyListeners();
-    await Future.delayed(const Duration(seconds: 1));
+
+    await Future.wait([
+      _playFeedbackSafely(feedbackPath),
+      Future<void>.delayed(_feedbackDuration),
+    ]);
     if (_disposed) return;
-    state = QuizState.guessing;
-    correctHighlightIndex = null;
-    wrongHighlightIndex = null;
+    _phase = _QuizPhase.guessing;
+    _correctHighlightIndex = null;
+    _wrongHighlightIndex = null;
     _next();
   }
 
+  Future<void> _playFeedbackSafely(String path) async {
+    try {
+      await _playFeedback(path);
+    } catch (_) {
+      // Audio feedback is optional; playback failure must not stop the quiz.
+    }
+  }
+
   void _next() {
-    _counter++;
+    _attemptCount++;
     _generateQuestion();
-    state = QuizState.guessing;
+    _phase = _QuizPhase.guessing;
     notifyListeners();
   }
 
   void _generateQuestion() {
     final phrase = currentPhrase;
-    currentQuestion = phrase == null
+    _currentQuestion = phrase == null
         ? null
         : QuizQuestion.fromPool(
             phrase: phrase,
-            numberOfOptions: numberOfOptions,
-            distractorPool: phrases,
+            numberOfOptions: _numberOfOptions,
+            distractorPool: _phrases,
+            random: _random,
           );
   }
 

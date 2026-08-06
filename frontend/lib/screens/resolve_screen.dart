@@ -1,8 +1,8 @@
-import "package:flutter/material.dart";
+import 'package:flutter/material.dart';
 
-import "../models/phrase_request.dart";
-import "../models/view_data.dart";
-import "../widgets/appbar.dart";
+import '../models/phrase_request.dart';
+import '../models/view_data.dart';
+import '../widgets/appbar.dart';
 
 class ResolveScreen extends StatelessWidget {
   final RequestListViewData viewData;

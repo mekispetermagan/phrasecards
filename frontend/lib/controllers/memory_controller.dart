@@ -9,10 +9,10 @@ import '../models/phrase.dart';
 class MemoryController extends ChangeNotifier {
   static const int pairCount = 9;
 
-  final List<Phrase> phrases;
+  final List<Phrase> _phrases;
   final Random _random;
   final Duration revealDuration;
-  final Future<void> Function(String? audioPath) playPronunciation;
+  final Future<void> Function(String? audioPath) _playPronunciation;
 
   List<MemoryCardData> _cards = const [];
   int? _firstCardId;
@@ -21,11 +21,13 @@ class MemoryController extends ChangeNotifier {
   bool _disposed = false;
 
   MemoryController({
-    required this.phrases,
-    required this.playPronunciation,
+    required List<Phrase> phrases,
+    required Future<void> Function(String? audioPath) pronunciationPlayer,
     Random? random,
     this.revealDuration = const Duration(milliseconds: 900),
-  }) : _random = random ?? Random() {
+  }) : _phrases = List.unmodifiable(phrases),
+       _playPronunciation = pronunciationPlayer,
+       _random = random ?? Random() {
     startNewGame(notify: false);
   }
 
@@ -35,7 +37,7 @@ class MemoryController extends ChangeNotifier {
 
   void startNewGame({bool notify = true}) {
     final Map<String, List<Phrase>> phrasesByTarget = {};
-    for (final phrase in phrases) {
+    for (final phrase in _phrases) {
       phrasesByTarget
           .putIfAbsent(_normalize(phrase.target), () => [])
           .add(phrase);
@@ -86,7 +88,7 @@ class MemoryController extends ChangeNotifier {
     _revealCounter++;
     _setState(cardId, MemoryCardState.revealed, revealOrder: _revealCounter);
     if (selectedCard.side == MemoryCardSide.target) {
-      unawaited(playPronunciation(selectedCard.audioPath));
+      unawaited(_playPronunciation(selectedCard.audioPath));
     }
     final firstCardId = _firstCardId;
     if (firstCardId == null) {

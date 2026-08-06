@@ -28,7 +28,7 @@ class LearnViewData {
 class QuizViewData {
   final QuizQuestion? question;
   final int score;
-  final int maxScore;
+  final int attemptCount;
   final int? correctHighlightIndex;
   final int? wrongHighlightIndex;
   final List<PronunciationData> optionPronunciations;
@@ -37,7 +37,7 @@ class QuizViewData {
   const QuizViewData({
     required this.question,
     required this.score,
-    required this.maxScore,
+    required this.attemptCount,
     required this.correctHighlightIndex,
     required this.wrongHighlightIndex,
     required this.optionPronunciations,
@@ -45,13 +45,13 @@ class QuizViewData {
   });
 }
 
-class AccentedViewData {
+class AccentsViewData {
   final List<List<LetterData>>? currentLetterData;
   final List<LetterData> accentedVowelData;
   final PronunciationData? pronunciation;
   final AccentsPhase phase;
 
-  const AccentedViewData({
+  const AccentsViewData({
     required this.accentedVowelData,
     required this.currentLetterData,
     required this.pronunciation,
@@ -71,14 +71,14 @@ class MemoryViewData {
   });
 }
 
-class NumbersViewData {
+class NumberQuizViewData {
   final int solution;
   final List<String> options;
   final String emoji;
   final int score;
   final int? successHighlightIndex;
   final int? failureHighlightIndex;
-  const NumbersViewData({
+  const NumberQuizViewData({
     required this.solution,
     required this.options,
     required this.emoji,

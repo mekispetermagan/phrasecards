@@ -6,7 +6,7 @@ import 'package:http/testing.dart';
 import 'package:phrasecards/api/api.dart';
 import 'package:phrasecards/audio/asset_audio_player.dart';
 import 'package:phrasecards/audio/pronunciation_player.dart';
-import 'package:phrasecards/controllers/numbers_controller.dart';
+import 'package:phrasecards/controllers/number_quiz_controller.dart';
 import 'package:phrasecards/controllers/pronunciation_controller.dart';
 import 'package:phrasecards/controllers/session_controller.dart';
 import 'package:phrasecards/models/accents.dart';
@@ -171,10 +171,10 @@ void main() {
     expect(player.playedPaths, hasLength(1));
 
     controller.accentsNext();
-    expect(controller.accentedViewData.phase, AccentsPhase.solving);
+    expect(controller.accentsViewData.phase, AccentsPhase.solving);
     expect(player.playedPaths, hasLength(1));
 
-    final hiddenLetter = controller.accentedViewData.currentLetterData!
+    final hiddenLetter = controller.accentsViewData.currentLetterData!
         .expand((word) => word)
         .firstWhere((letter) => !letter.isRevealed);
     controller.accentsOnDrop(
@@ -216,6 +216,36 @@ void main() {
     expect(player.playedPaths, isEmpty);
   });
 
+  test('returning from quiz stops asset feedback playback', () async {
+    final player = _ControllableAssetAudioPlayer();
+    final api = PhrasesApi(
+      client: MockClient(
+        (_) async => http.Response(
+          _fourPhrases,
+          200,
+          headers: {'content-type': 'application/json; charset=utf-8'},
+        ),
+      ),
+    );
+    final controller = SessionController(api: api, assetAudioPlayer: player);
+    addTearDown(controller.dispose);
+    await _waitForStatus(controller, SessionStatus.menu);
+
+    controller.menuItems.singleWhere((item) => item.$1 == 'Play quiz').$2();
+    final correctIndex = controller.quizViewData.question!.correctIndex;
+    final submission = controller.quizSubmit!(correctIndex);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(player.playedPaths, ['assets/audio/correct.mp3']);
+    expect(controller.quizSubmit, isNull);
+
+    controller.onMenu();
+    await submission;
+
+    expect(controller.status, SessionStatus.menu);
+    expect(player.stopCount, 1);
+  });
+
   test(
     'numbers entry exposes its view and returning to menu stops audio',
     () async {
@@ -237,21 +267,22 @@ void main() {
           .singleWhere((item) => item.$1 == 'Practice numbers')
           .$2();
 
-      expect(controller.status, SessionStatus.numbers);
-      expect(controller.numbersViewData.options, hasLength(3));
-      expect(controller.numbersViewData.solution, inInclusiveRange(1, 10));
-      expect(controller.onNumbersSubmit, isNotNull);
+      expect(controller.status, SessionStatus.numberQuiz);
+      expect(controller.numberQuizViewData.options, hasLength(3));
+      expect(controller.numberQuizViewData.solution, inInclusiveRange(1, 10));
+      expect(controller.numberQuizSubmit, isNotNull);
 
-      final solutionName = numberNames[controller.numbersViewData.solution - 1];
-      final correctIndex = controller.numbersViewData.options.indexOf(
+      final solutionName =
+          hungarianNumberNames[controller.numberQuizViewData.solution - 1];
+      final correctIndex = controller.numberQuizViewData.options.indexOf(
         solutionName,
       );
-      final submission = controller.onNumbersSubmit!(correctIndex);
+      final submission = controller.numberQuizSubmit!(correctIndex);
       await Future<void>.delayed(Duration.zero);
 
       expect(player.playedPaths.single, endsWith('c.mp3'));
-      expect(controller.numbersViewData.score, 1);
-      expect(controller.onNumbersSubmit, isNull);
+      expect(controller.numberQuizViewData.score, 1);
+      expect(controller.numberQuizSubmit, isNull);
 
       controller.onMenu();
       await submission;

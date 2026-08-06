@@ -58,11 +58,7 @@ class PhraseRequestListResult {
     : requests = null;
 }
 
-abstract interface class PhraseProgressApi {
-  Future<bool> markPhraseSeen(int phraseId);
-}
-
-class PhrasesApi implements PhraseProgressApi {
+class PhrasesApi {
   final http.Client _client;
   final Map<String, String> _headers;
 
@@ -79,13 +75,11 @@ class PhrasesApi implements PhraseProgressApi {
       final data = decodeJsonBody(response.body);
 
       if (response.statusCode == 200) {
-        if (response.statusCode == 200) {
-          final phrases = (data as List<dynamic>)
-              .map((item) => Phrase.fromJson(item as Map<String, dynamic>))
-              .toList();
+        final phrases = (data as List<dynamic>)
+            .map((item) => Phrase.fromJson(item as Map<String, dynamic>))
+            .toList();
 
-          return PhraseListResult.success(phrases: phrases);
-        }
+        return PhraseListResult.success(phrases: phrases);
       }
 
       return PhraseListResult.failure(
@@ -97,18 +91,6 @@ class PhrasesApi implements PhraseProgressApi {
         return const PhraseListResult.failure(failure: Failure.invalidData);
       }
       return const PhraseListResult.failure(failure: Failure.networkError);
-    }
-  }
-
-  @override
-  Future<bool> markPhraseSeen(int phraseId) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}/api/phrases/$phraseId/seen');
-
-    try {
-      final response = await _client.patch(uri, headers: _headers);
-      return response.statusCode == 204;
-    } catch (_) {
-      return false;
     }
   }
 }

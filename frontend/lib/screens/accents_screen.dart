@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:phrasecards/widgets/buttons.dart';
+import '../widgets/buttons.dart';
 
 import '../models/accents.dart';
 import '../models/view_data.dart';
@@ -8,7 +8,7 @@ import '../widgets/appbar.dart';
 import '../widgets/lettercard.dart';
 
 class AccentsScreen extends StatelessWidget {
-  final AccentedViewData viewData;
+  final AccentsViewData viewData;
   final VoidCallback onBack;
   final VoidCallback onNext;
   final Future<void> Function() playAudio;

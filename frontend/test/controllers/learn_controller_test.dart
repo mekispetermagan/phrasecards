@@ -45,8 +45,6 @@ Phrase _phrase(int id, {String? source, String? target, String? audioPath}) =>
       id: id,
       source: source ?? 'Source $id',
       target: target ?? 'Target $id',
-      rating: 3,
-      isNew: true,
       audioPath: audioPath,
     );
 
@@ -64,8 +62,8 @@ void main() {
       final pronunciation = PronunciationController(player: player);
       final controller = LearnController(
         phrases: [_phrase(3, audioPath: '/audio/phrase.mp3')],
-        pronunciation: pronunciation,
-        viewStore: await _store(),
+        pronunciationController: pronunciation,
+        phraseViewStore: await _store(),
       );
       addTearDown(controller.dispose);
       addTearDown(pronunciation.dispose);
@@ -87,8 +85,8 @@ void main() {
     final pronunciation = PronunciationController(player: player);
     final controller = LearnController(
       phrases: [_phrase(4)],
-      pronunciation: pronunciation,
-      viewStore: await _store(),
+      pronunciationController: pronunciation,
+      phraseViewStore: await _store(),
     );
     addTearDown(controller.dispose);
     addTearDown(pronunciation.dispose);
@@ -109,8 +107,8 @@ void main() {
     );
     final controller = LearnController(
       phrases: [_phrase(7)],
-      pronunciation: pronunciation,
-      viewStore: store,
+      pronunciationController: pronunciation,
+      phraseViewStore: store,
     );
     addTearDown(controller.dispose);
     addTearDown(pronunciation.dispose);
@@ -134,8 +132,8 @@ void main() {
     );
     final controller = LearnController(
       phrases: [_phrase(1), _phrase(2), _phrase(3), _phrase(4)],
-      pronunciation: pronunciation,
-      viewStore: await _store({1: 0, 2: 4, 3: 13, 4: 25}),
+      pronunciationController: pronunciation,
+      phraseViewStore: await _store({1: 0, 2: 4, 3: 13, 4: 25}),
       random: Random(1),
     );
     addTearDown(controller.dispose);
@@ -162,8 +160,8 @@ void main() {
     );
     final controller = LearnController(
       phrases: [_phrase(1)],
-      pronunciation: pronunciation,
-      viewStore: await _store(),
+      pronunciationController: pronunciation,
+      phraseViewStore: await _store(),
     );
     addTearDown(controller.dispose);
     addTearDown(pronunciation.dispose);

@@ -4,6 +4,8 @@ export 'phrase_request.dart';
 export 'letter_data.dart';
 export 'learn.dart';
 export 'memory.dart';
+export 'number_quiz.dart';
 export 'position.dart';
 export 'pronunciation.dart';
 export 'quiz.dart';
+export 'view_data.dart';

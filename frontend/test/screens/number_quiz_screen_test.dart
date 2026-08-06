@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phrasecards/models/view_data.dart';
-import 'package:phrasecards/screens/numbers_screen.dart';
+import 'package:phrasecards/screens/number_quiz_screen.dart';
 import 'package:phrasecards/widgets/buttons.dart';
 
 const _options = ['kettő', 'öt', 'hét'];
 
-NumbersViewData _viewData({
+NumberQuizViewData _viewData({
   int? successHighlightIndex,
   int? failureHighlightIndex,
-}) => NumbersViewData(
+}) => NumberQuizViewData(
   solution: 5,
   options: _options,
   emoji: '🍎',
@@ -19,12 +19,12 @@ NumbersViewData _viewData({
 );
 
 Widget _app({
-  NumbersViewData? viewData,
+  NumberQuizViewData? viewData,
   Future<void> Function(int)? onSubmit,
   VoidCallback? onBack,
 }) => MaterialApp(
   theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue)),
-  home: NumbersScreen(
+  home: NumberQuizScreen(
     viewData: viewData ?? _viewData(),
     onBack: onBack ?? () {},
     onSubmit: onSubmit,

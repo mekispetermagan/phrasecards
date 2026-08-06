@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dynamic_color/dynamic_color.dart';
 
 import '../models/view_data.dart';
 import '../widgets/appbar.dart';
@@ -7,7 +8,7 @@ import '../widgets/buttons.dart';
 class QuizScreen extends StatelessWidget {
   final QuizViewData viewData;
   final VoidCallback onBack;
-  final Future<void> Function(int) submit;
+  final Future<void> Function(int)? submit;
   final Future<void> Function(int) playAudio;
   final ValueChanged<bool> setShowPronunciationButtons;
 
@@ -23,6 +24,22 @@ class QuizScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final question = viewData.question;
+    final colorScheme = Theme.of(context).colorScheme;
+    final successScheme = ColorScheme.fromSeed(
+      seedColor: Colors.green.harmonizeWith(colorScheme.primary),
+      brightness: colorScheme.brightness,
+    );
+    Color backgroundColor(int index) => index == viewData.correctHighlightIndex
+        ? successScheme.primaryContainer
+        : index == viewData.wrongHighlightIndex
+        ? colorScheme.errorContainer
+        : colorScheme.primaryContainer;
+    Color foregroundColor(int index) => index == viewData.correctHighlightIndex
+        ? successScheme.onPrimaryContainer
+        : index == viewData.wrongHighlightIndex
+        ? colorScheme.onErrorContainer
+        : colorScheme.onPrimaryContainer;
+
     return Scaffold(
       appBar: FeatureAppBar(title: 'Play a quiz', onBack: onBack),
       body: question == null
@@ -54,14 +71,13 @@ class QuizScreen extends StatelessWidget {
                       children: [
                         Expanded(
                           child: FilledButton(
-                            onPressed: () => submit(i),
+                            onPressed: submit == null ? null : () => submit!(i),
                             style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.all(
-                                i == viewData.correctHighlightIndex
-                                    ? Colors.green
-                                    : i == viewData.wrongHighlightIndex
-                                    ? Colors.red
-                                    : Theme.of(context).colorScheme.primary,
+                              backgroundColor: WidgetStatePropertyAll(
+                                backgroundColor(i),
+                              ),
+                              foregroundColor: WidgetStatePropertyAll(
+                                foregroundColor(i),
                               ),
                             ),
                             child: Padding(
@@ -81,7 +97,7 @@ class QuizScreen extends StatelessWidget {
                       ],
                     ),
                   Text(
-                    'Score: ${viewData.score}/${viewData.maxScore}',
+                    'Score: ${viewData.score}/${viewData.attemptCount}',
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 18),
                   ),

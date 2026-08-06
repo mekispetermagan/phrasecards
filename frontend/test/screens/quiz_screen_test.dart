@@ -6,7 +6,7 @@ import 'package:phrasecards/models/view_data.dart';
 import 'package:phrasecards/screens/quiz_screen.dart';
 import 'package:phrasecards/widgets/buttons.dart';
 
-const _question = QuizQuestion(
+final _question = QuizQuestion(
   source: 'Hello',
   options: [
     QuizOption(text: 'One', audioPath: '/audio/one.mp3'),
@@ -21,7 +21,7 @@ QuizViewData _viewData({required bool showPronunciationButtons}) =>
     QuizViewData(
       question: _question,
       score: 0,
-      maxScore: 0,
+      attemptCount: 0,
       correctHighlightIndex: null,
       wrongHighlightIndex: null,
       optionPronunciations: const [

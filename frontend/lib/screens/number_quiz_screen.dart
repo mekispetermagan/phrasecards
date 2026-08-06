@@ -3,12 +3,12 @@ import 'package:dynamic_color/dynamic_color.dart';
 import '../widgets/appbar.dart';
 import '../models/view_data.dart';
 
-class NumbersScreen extends StatelessWidget {
-  final NumbersViewData viewData;
+class NumberQuizScreen extends StatelessWidget {
+  final NumberQuizViewData viewData;
   final VoidCallback onBack;
   final Future<void> Function(int)? onSubmit;
 
-  const NumbersScreen({
+  const NumberQuizScreen({
     required this.viewData,
     required this.onBack,
     required this.onSubmit,

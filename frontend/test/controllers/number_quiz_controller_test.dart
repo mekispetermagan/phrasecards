@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:phrasecards/controllers/numbers_controller.dart';
+import 'package:phrasecards/controllers/number_quiz_controller.dart';
 
 void main() {
   test(
@@ -10,7 +10,7 @@ void main() {
     () async {
       final playback = Completer<void>();
       String? playedPath;
-      final controller = NumbersController((path) {
+      final controller = NumberQuizController((path) {
         playedPath = path;
         return playback.future;
       });
@@ -18,7 +18,7 @@ void main() {
 
       final initialSolution = controller.solution;
       final correctIndex = controller.options.indexOf(
-        numberNames[initialSolution - 1],
+        hungarianNumberNames[initialSolution - 1],
       );
 
       controller.submit!(correctIndex);
@@ -40,17 +40,17 @@ void main() {
 
   test('plays feedback for the incorrectly guessed number', () async {
     String? playedPath;
-    final controller = NumbersController((path) async {
+    final controller = NumberQuizController((path) async {
       playedPath = path;
     });
     addTearDown(controller.dispose);
 
     final correctIndex = controller.options.indexOf(
-      numberNames[controller.solution - 1],
+      hungarianNumberNames[controller.solution - 1],
     );
     final wrongIndex = correctIndex == 0 ? 1 : 0;
     final guessedNumber =
-        numberNames.indexOf(controller.options[wrongIndex]) + 1;
+        hungarianNumberNames.indexOf(controller.options[wrongIndex]) + 1;
 
     controller.submit!(wrongIndex);
     await Future<void>.delayed(Duration.zero);
@@ -60,7 +60,7 @@ void main() {
   });
 
   test('continues with a new question when audio playback fails', () async {
-    final controller = NumbersController(
+    final controller = NumberQuizController(
       (_) => Future<void>.error(StateError('missing asset')),
     );
     addTearDown(controller.dispose);
@@ -75,8 +75,8 @@ void main() {
   });
 
   test('uses an injected random source for repeatable questions', () {
-    final first = NumbersController((_) async {}, random: Random(123));
-    final second = NumbersController((_) async {}, random: Random(123));
+    final first = NumberQuizController((_) async {}, random: Random(123));
+    final second = NumberQuizController((_) async {}, random: Random(123));
     addTearDown(first.dispose);
     addTearDown(second.dispose);
 
@@ -88,14 +88,14 @@ void main() {
   test('ignores a stale second submission while feedback is playing', () async {
     final playback = Completer<void>();
     var playCount = 0;
-    final controller = NumbersController((_) {
+    final controller = NumberQuizController((_) {
       playCount++;
       return playback.future;
     }, random: Random(1));
     addTearDown(controller.dispose);
 
     final correctIndex = controller.options.indexOf(
-      numberNames[controller.solution - 1],
+      hungarianNumberNames[controller.solution - 1],
     );
     final staleSubmit = controller.submit!;
 
@@ -111,7 +111,7 @@ void main() {
 
   test('rejects invalid option indices without changing state', () async {
     var played = false;
-    final controller = NumbersController((_) async {
+    final controller = NumberQuizController((_) async {
       played = true;
     });
     addTearDown(controller.dispose);
@@ -123,5 +123,21 @@ void main() {
     expect(controller.submit, isNotNull);
     expect(controller.successHighlightIndex, isNull);
     expect(controller.failureHighlightIndex, isNull);
+  });
+
+  test('does not generate or notify after disposal during playback', () async {
+    final playback = Completer<void>();
+    final controller = NumberQuizController((_) => playback.future);
+    var notifications = 0;
+    controller.addListener(() => notifications++);
+
+    final submission = controller.submit!(0);
+    expect(notifications, 1);
+
+    controller.dispose();
+    playback.complete();
+    await submission;
+
+    expect(notifications, 1);
   });
 }

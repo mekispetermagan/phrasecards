@@ -17,8 +17,6 @@ Phrase _phrase(String target) => Phrase(
   id: 1,
   source: 'Source',
   target: target,
-  rating: 3,
-  isNew: false,
   audioPath: '/audio/phrase.mp3',
 );
 
@@ -38,7 +36,7 @@ void main() {
   test('reports unavailable when there are no accented phrases', () {
     final controller = AccentsController(
       phrases: [_phrase('Egy')],
-      pronunciation: pronunciation,
+      pronunciationController: pronunciation,
     );
     addTearDown(controller.dispose);
 
@@ -50,7 +48,7 @@ void main() {
   test('validates drops and advances only after solving', () {
     final controller = AccentsController(
       phrases: [_phrase('Kettő')],
-      pronunciation: pronunciation,
+      pronunciationController: pronunciation,
     );
     addTearDown(controller.dispose);
 
@@ -69,7 +67,11 @@ void main() {
       dragTargetId: hiddenLetter.id,
       draggableLetter: hiddenLetter.letter,
     );
-    expect(hiddenLetter.isRevealed, isTrue);
+    final revealedLetter = controller.currentLetterData!
+        .expand((word) => word)
+        .singleWhere((letter) => letter.id == hiddenLetter.id);
+    expect(hiddenLetter.isRevealed, isFalse);
+    expect(revealedLetter.isRevealed, isTrue);
     expect(controller.phase, AccentsPhase.solved);
 
     expect(controller.next(), isTrue);
@@ -81,7 +83,7 @@ void main() {
   test('builds letters from grapheme clusters consistently', () {
     final controller = AccentsController(
       phrases: [_phrase('😀Á')],
-      pronunciation: pronunciation,
+      pronunciationController: pronunciation,
     );
     addTearDown(controller.dispose);
 

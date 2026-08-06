@@ -9,9 +9,9 @@ import '../storage/phrase_view_store.dart';
 import 'pronunciation_controller.dart';
 
 class LearnController extends ChangeNotifier {
-  final List<Phrase> phrases;
-  final PronunciationController pronunciation;
-  final PhraseViewStore viewStore;
+  final List<Phrase> _phrases;
+  final PronunciationController _pronunciation;
+  final PhraseViewStore _viewStore;
   final Random _random;
 
   final Set<PhraseGroup> _selectedGroups;
@@ -21,12 +21,15 @@ class LearnController extends ChangeNotifier {
   bool _disposed = false;
 
   LearnController({
-    required this.phrases,
-    required this.pronunciation,
-    required this.viewStore,
+    required List<Phrase> phrases,
+    required PronunciationController pronunciationController,
+    required PhraseViewStore phraseViewStore,
     Set<PhraseGroup>? selectedGroups,
     Random? random,
-  }) : _selectedGroups = Set.of(selectedGroups ?? PhraseGroup.values),
+  }) : _phrases = List.unmodifiable(phrases),
+       _pronunciation = pronunciationController,
+       _viewStore = phraseViewStore,
+       _selectedGroups = Set.of(selectedGroups ?? PhraseGroup.values),
        _random = random ?? Random() {
     _reshuffle();
   }
@@ -35,14 +38,14 @@ class LearnController extends ChangeNotifier {
   bool get cardIsTurned => _cardIsTurned;
   bool get isCurrentPhraseNew {
     final phrase = currentPhrase;
-    return phrase != null && isLocallyNew(viewStore.viewsFor(phrase.id));
+    return phrase != null && isLocallyNew(_viewStore.viewsFor(phrase.id));
   }
 
   Set<PhraseGroup> get selectedGroups => Set.unmodifiable(_selectedGroups);
 
   PronunciationData? get pronunciationData {
     final phrase = currentPhrase;
-    return phrase == null ? null : pronunciation.dataFor(phrase.audioPath);
+    return phrase == null ? null : _pronunciation.dataFor(phrase.audioPath);
   }
 
   void setSelectedGroups(Set<PhraseGroup> groups) {
@@ -68,7 +71,7 @@ class LearnController extends ChangeNotifier {
     if (phrase == null) return;
 
     _isAdvancing = true;
-    await viewStore.increment(phrase.id);
+    await _viewStore.increment(phrase.id);
     _isAdvancing = false;
     if (_disposed) return;
 
@@ -78,23 +81,23 @@ class LearnController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> playAudio() => pronunciation.play(currentPhrase?.audioPath);
+  Future<void> playAudio() => _pronunciation.play(currentPhrase?.audioPath);
 
   void _reshuffle() {
     final eligible = [
-      for (final phrase in phrases)
+      for (final phrase in _phrases)
         if (_selectedGroups.any(
-          (group) => group.includes(viewStore.viewsFor(phrase.id)),
+          (group) => group.includes(_viewStore.viewsFor(phrase.id)),
         ))
           phrase,
     ];
     final newPhrases = [
       for (final phrase in eligible)
-        if (isLocallyNew(viewStore.viewsFor(phrase.id))) phrase,
+        if (isLocallyNew(_viewStore.viewsFor(phrase.id))) phrase,
     ]..shuffle(_random);
     final remaining = [
       for (final phrase in eligible)
-        if (!isLocallyNew(viewStore.viewsFor(phrase.id))) phrase,
+        if (!isLocallyNew(_viewStore.viewsFor(phrase.id))) phrase,
     ]..shuffle(_random);
     _queue = [...newPhrases, ...remaining];
   }

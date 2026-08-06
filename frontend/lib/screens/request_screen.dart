@@ -1,7 +1,7 @@
-import "package:flutter/material.dart";
+import 'package:flutter/material.dart';
 
-import "../models/view_data.dart";
-import "../widgets/appbar.dart";
+import '../models/view_data.dart';
+import '../widgets/appbar.dart';
 
 class RequestScreen extends StatelessWidget {
   final RequestSubmissionViewData viewData;

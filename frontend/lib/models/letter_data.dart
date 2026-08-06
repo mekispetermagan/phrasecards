@@ -1,15 +1,17 @@
 class LetterData {
   final String id;
   final String letter;
-  bool isRevealed;
+  final bool isRevealed;
 
-  LetterData({
+  const LetterData({
     required this.id,
     required this.letter,
     required this.isRevealed,
   });
 
-  void reveal() {
-    isRevealed = true;
-  }
+  LetterData copyWith({bool? isRevealed}) => LetterData(
+    id: id,
+    letter: letter,
+    isRevealed: isRevealed ?? this.isRevealed,
+  );
 }

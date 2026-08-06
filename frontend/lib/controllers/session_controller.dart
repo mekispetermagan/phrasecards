@@ -14,7 +14,7 @@ import 'memory_controller.dart';
 import 'pronunciation_controller.dart';
 import 'quiz_controller.dart';
 import 'accents_controller.dart';
-import 'numbers_controller.dart';
+import 'number_quiz_controller.dart';
 import 'request_submission_controller.dart';
 import 'resolution_controller.dart';
 
@@ -26,7 +26,7 @@ enum SessionStatus {
   quiz,
   accents,
   memory,
-  numbers,
+  numberQuiz,
   request,
   resolve,
   resolveForm,
@@ -39,7 +39,7 @@ class SessionController extends ChangeNotifier {
   QuizController? _quizController;
   MemoryController? _memoryController;
   AccentsController? _accentsController;
-  late final NumbersController _numbersController;
+  late final NumberQuizController _numberQuizController;
   late final RequestSubmissionController _requestController;
   late final ResolutionController _resolutionController;
   final PronunciationController _pronunciationController;
@@ -58,7 +58,7 @@ class SessionController extends ChangeNotifier {
     ("Play quiz", _onQuiz),
     ("Memory game", _onMemory),
     ("Fix the accents", _onAccents),
-    ("Practice numbers", _onNumbers),
+    ("Practice numbers", _onNumberQuiz),
     ("Request a phrase", _onRequest),
     ("Resolve a request", _onResolve),
   ];
@@ -81,7 +81,7 @@ class SessionController extends ChangeNotifier {
       ..addListener(_forwardNotification);
     _resolutionController = ResolutionController(requestApi)
       ..addListener(_forwardNotification);
-    _numbersController = NumbersController(_assetAudioPlayer.play)
+    _numberQuizController = NumberQuizController(_assetAudioPlayer.play)
       ..addListener(_forwardNotification);
     _pronunciationController.addListener(_forwardNotification);
     unawaited(_load());
@@ -115,7 +115,7 @@ class SessionController extends ChangeNotifier {
         ));
   }
 
-  NumbersController get _numbers => _numbersController;
+  NumberQuizController get _numberQuiz => _numberQuizController;
 
   LearnViewData get learnViewData => LearnViewData(
     phrase: _learn.currentPhrase,
@@ -128,14 +128,14 @@ class SessionController extends ChangeNotifier {
   QuizViewData get quizViewData => QuizViewData(
     question: _quiz.currentQuestion,
     score: _quiz.score,
-    maxScore: _quiz.counter,
+    attemptCount: _quiz.attemptCount,
     correctHighlightIndex: _quiz.correctHighlightIndex,
     wrongHighlightIndex: _quiz.wrongHighlightIndex,
     optionPronunciations: _quiz.optionPronunciations,
     showPronunciationButtons: _quiz.showPronunciationButtons,
   );
 
-  AccentedViewData get accentedViewData => AccentedViewData(
+  AccentsViewData get accentsViewData => AccentsViewData(
     accentedVowelData: _accents.accentedVowelData,
     currentLetterData: _accents.currentLetterData,
     pronunciation: _accents.pronunciationData,
@@ -148,13 +148,13 @@ class SessionController extends ChangeNotifier {
     isComplete: _memory.isComplete,
   );
 
-  NumbersViewData get numbersViewData => NumbersViewData(
-    solution: _numbers.solution,
-    options: _numbers.options,
-    emoji: _numbers.emoji,
-    score: _numbers.score,
-    successHighlightIndex: _numbers.successHighlightIndex,
-    failureHighlightIndex: _numbers.failureHighlightIndex,
+  NumberQuizViewData get numberQuizViewData => NumberQuizViewData(
+    solution: _numberQuiz.solution,
+    options: _numberQuiz.options,
+    emoji: _numberQuiz.emoji,
+    score: _numberQuiz.score,
+    successHighlightIndex: _numberQuiz.successHighlightIndex,
+    failureHighlightIndex: _numberQuiz.failureHighlightIndex,
   );
 
   void learnTurnCard() => _learn.turnCard();
@@ -166,7 +166,7 @@ class SessionController extends ChangeNotifier {
   void learnSetSelectedGroups(Set<PhraseGroup> groups) =>
       _learn.setSelectedGroups(groups);
 
-  Future<void> quizSubmit(int guessIndex) => _quiz.submit(guessIndex);
+  Future<void> Function(int)? get quizSubmit => _quiz.submit;
 
   Future<void> quizPlayAudio(int optionIndex) =>
       _quiz.playOptionAudio(optionIndex);
@@ -192,7 +192,7 @@ class SessionController extends ChangeNotifier {
 
   void memoryStartNewGame() => _memory.startNewGame();
 
-  Future<void> Function(int)? get onNumbersSubmit => _numbers.submit;
+  Future<void> Function(int)? get numberQuizSubmit => _numberQuiz.submit;
 
   RequestSubmissionViewData get requestViewData => _requestController.viewData;
 
@@ -298,25 +298,26 @@ class SessionController extends ChangeNotifier {
 
     _learnController = LearnController(
       phrases: phrases,
-      pronunciation: _pronunciationController,
-      viewStore: _viewStore,
+      pronunciationController: _pronunciationController,
+      phraseViewStore: _viewStore,
       selectedGroups: selectedLearnGroups,
     )..addListener(_forwardNotification);
 
     _quizController = QuizController(
       phrases: phrases,
-      viewStore: _viewStore,
-      pronunciation: _pronunciationController,
+      phraseViewStore: _viewStore,
+      pronunciationController: _pronunciationController,
+      feedbackPlayer: _assetAudioPlayer.play,
     )..addListener(_forwardNotification);
 
     _memoryController = MemoryController(
       phrases: phrases,
-      playPronunciation: _pronunciationController.play,
+      pronunciationPlayer: _pronunciationController.play,
     )..addListener(_forwardNotification);
 
     _accentsController = AccentsController(
       phrases: phrases,
-      pronunciation: _pronunciationController,
+      pronunciationController: _pronunciationController,
     )..addListener(_forwardNotification);
   }
 
@@ -352,7 +353,7 @@ class SessionController extends ChangeNotifier {
     _quizController?.removeListener(_forwardNotification);
     _memoryController?.removeListener(_forwardNotification);
     _accentsController?.removeListener(_forwardNotification);
-    _numbersController.removeListener(_forwardNotification);
+    _numberQuizController.removeListener(_forwardNotification);
     _requestController.removeListener(_forwardNotification);
     _resolutionController.removeListener(_forwardNotification);
     _pronunciationController.removeListener(_forwardNotification);
@@ -361,7 +362,7 @@ class SessionController extends ChangeNotifier {
     _quizController?.dispose();
     _memoryController?.dispose();
     _accentsController?.dispose();
-    _numbersController.dispose();
+    _numberQuizController.dispose();
     _requestController.dispose();
     _resolutionController.dispose();
     _pronunciationController.dispose();
@@ -370,7 +371,9 @@ class SessionController extends ChangeNotifier {
   }
 
   void onMenu() {
-    if (status == SessionStatus.numbers) unawaited(_assetAudioPlayer.stop());
+    if (status == SessionStatus.quiz || status == SessionStatus.numberQuiz) {
+      unawaited(_assetAudioPlayer.stop());
+    }
     status = SessionStatus.menu;
     notifyListeners();
     unawaited(_refreshPhrases());
@@ -398,8 +401,8 @@ class SessionController extends ChangeNotifier {
     unawaited(_accents.playAudio());
   }
 
-  void _onNumbers() {
-    status = SessionStatus.numbers;
+  void _onNumberQuiz() {
+    status = SessionStatus.numberQuiz;
     notifyListeners();
   }
 

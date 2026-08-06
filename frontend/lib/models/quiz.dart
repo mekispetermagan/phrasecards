@@ -1,4 +1,5 @@
 import 'dart:math';
+
 import 'phrase.dart';
 
 class QuizOption {
@@ -12,11 +13,13 @@ class QuizQuestion {
   final List<QuizOption> options;
   final int correctIndex;
 
-  const QuizQuestion({
+  QuizQuestion({
     required this.source,
-    required this.options,
+    required List<QuizOption> options,
     required this.correctIndex,
-  });
+  }) : options = List.unmodifiable(options) {
+    RangeError.checkValidIndex(correctIndex, options, 'correctIndex');
+  }
 
   factory QuizQuestion.fromPool({
     required Phrase phrase,
@@ -24,21 +27,34 @@ class QuizQuestion {
     required List<Phrase> distractorPool,
     Random? random,
   }) {
-    final Random r = random ?? Random();
-    int correctIndex = r.nextInt(numberOfOptions);
-    List<QuizOption> options = [];
+    if (numberOfOptions <= 0) {
+      throw RangeError.value(
+        numberOfOptions,
+        'numberOfOptions',
+        'Must be positive',
+      );
+    }
+
+    final r = random ?? Random();
+    final distractorsByTarget = <String, Phrase>{
+      for (final candidate in distractorPool)
+        if (candidate.target != phrase.target) candidate.target: candidate,
+    };
+    if (distractorsByTarget.length < numberOfOptions - 1) {
+      throw StateError('Not enough distinct quiz distractors');
+    }
+
+    final distractors = distractorsByTarget.values.toList()..shuffle(r);
+    final correctIndex = r.nextInt(numberOfOptions);
+    final options = <QuizOption>[];
+    var distractorIndex = 0;
     for (int i = 0; i < numberOfOptions; i++) {
       if (i == correctIndex) {
         options.add(
           QuizOption(text: phrase.target, audioPath: phrase.audioPath),
         );
       } else {
-        List<Phrase> remainingPool = [...distractorPool]
-          ..removeWhere(
-            (x) => options.any((y) => y.text == x.target) || x == phrase,
-          );
-        Phrase newDistractor =
-            remainingPool[Random().nextInt(remainingPool.length)];
+        final newDistractor = distractors[distractorIndex++];
         options.add(
           QuizOption(
             text: newDistractor.target,

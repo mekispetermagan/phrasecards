@@ -9,8 +9,6 @@ Phrase _phrase(int id, String target) => Phrase(
   id: id,
   source: 'Source $id',
   target: target,
-  rating: 3,
-  isNew: false,
   audioPath: '/audio/$id.mp3',
 );
 
@@ -23,7 +21,7 @@ void main() {
         for (int i = 0; i < 8; i++) _phrase(i, 'Target $i'),
         _phrase(9, '  TARGET 0  '),
       ],
-      playPronunciation: _ignorePronunciation,
+      pronunciationPlayer: _ignorePronunciation,
       random: Random(1),
     );
     addTearDown(controller.dispose);
@@ -38,7 +36,7 @@ void main() {
         for (int i = 0; i < 10; i++) _phrase(i, 'Target $i'),
         _phrase(20, ' target 0 '),
       ],
-      playPronunciation: _ignorePronunciation,
+      pronunciationPlayer: _ignorePronunciation,
       random: Random(2),
     );
     addTearDown(controller.dispose);
@@ -64,7 +62,7 @@ void main() {
     () async {
       final controller = MemoryController(
         phrases: [for (int i = 0; i < 9; i++) _phrase(i, 'Target $i')],
-        playPronunciation: _ignorePronunciation,
+        pronunciationPlayer: _ignorePronunciation,
         random: Random(3),
         revealDuration: Duration.zero,
       );
@@ -104,7 +102,7 @@ void main() {
   test('marks a matching pair and can start a fresh game', () async {
     final controller = MemoryController(
       phrases: [for (int i = 0; i < 9; i++) _phrase(i, 'Target $i')],
-      playPronunciation: _ignorePronunciation,
+      pronunciationPlayer: _ignorePronunciation,
       random: Random(4),
       revealDuration: Duration.zero,
     );
@@ -132,7 +130,7 @@ void main() {
     final playedPaths = <String?>[];
     final controller = MemoryController(
       phrases: [for (int i = 0; i < 9; i++) _phrase(i, 'Target $i')],
-      playPronunciation: (path) async => playedPaths.add(path),
+      pronunciationPlayer: (path) async => playedPaths.add(path),
       random: Random(5),
       revealDuration: Duration.zero,
     );

@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/number_quiz.dart';
 
-const List<String> numberNames = [
+const List<String> hungarianNumberNames = [
   "egy",
   "kettő",
   "három",
@@ -17,7 +17,7 @@ const List<String> numberNames = [
   "tíz",
 ];
 
-const List<String> emojis = [
+const List<String> _numberQuizEmojis = [
   "🪻",
   "🌸",
   "🍎",
@@ -32,50 +32,52 @@ const List<String> emojis = [
   "🌞",
 ];
 
-enum NumbersState { guessing, feedback }
+enum _NumberQuizPhase { guessing, feedback }
 
-enum NumberFeedback {
+enum _NumberQuizFeedback {
   correct('c'),
   incorrect('w');
 
   final String assetSuffix;
 
-  const NumberFeedback(this.assetSuffix);
+  const _NumberQuizFeedback(this.assetSuffix);
 }
 
-class NumbersController extends ChangeNotifier {
+class NumberQuizController extends ChangeNotifier {
   final Future<void> Function(String assetPath) _playFeedback;
   final Random _random;
-  final int _upperLimit = numberNames.length;
+  final int _upperLimit = hungarianNumberNames.length;
   final int _numberOfOptions = 3;
   late NumberQuizQuestion _currentQuestion;
   late String _currentEmoji;
   int? _successHighlightIndex;
   int? _failureHighlightIndex;
-  NumbersState _state = NumbersState.guessing;
+  _NumberQuizPhase _state = _NumberQuizPhase.guessing;
   int _score = 0;
+  bool _disposed = false;
 
-  NumbersController(this._playFeedback, {Random? random})
+  NumberQuizController(this._playFeedback, {Random? random})
     : _random = random ?? Random() {
     _nextQuestion();
   }
 
   int get solution => _currentQuestion.solution;
   List<String> get options => [
-    for (int number in _currentQuestion.options) numberNames[number - 1],
+    for (int number in _currentQuestion.options)
+      hungarianNumberNames[number - 1],
   ];
   String get emoji => _currentEmoji;
   int get score => _score;
   int? get successHighlightIndex => _successHighlightIndex;
   int? get failureHighlightIndex => _failureHighlightIndex;
   Future<void> Function(int)? get submit =>
-      _state == NumbersState.guessing ? _submit : null;
+      _state == _NumberQuizPhase.guessing ? _submit : null;
 
-  String audioPath(int number, NumberFeedback feedback) =>
+  String _feedbackAudioPath(int number, _NumberQuizFeedback feedback) =>
       'assets/audio/numbers/$number${feedback.assetSuffix}.mp3';
 
   void _nextQuestion() {
-    _state = NumbersState.guessing;
+    _state = _NumberQuizPhase.guessing;
     _failureHighlightIndex = null;
     _successHighlightIndex = null;
     _currentQuestion = NumberQuizQuestion.generate(
@@ -83,18 +85,19 @@ class NumbersController extends ChangeNotifier {
       upperLimit: _upperLimit,
       r: _random,
     );
-    _currentEmoji = emojis[_random.nextInt(emojis.length)];
+    _currentEmoji =
+        _numberQuizEmojis[_random.nextInt(_numberQuizEmojis.length)];
     notifyListeners();
   }
 
   Future<void> _submit(int guessIndex) async {
-    if (_state != NumbersState.guessing) return;
+    if (_state != _NumberQuizPhase.guessing) return;
     RangeError.checkValidIndex(
       guessIndex,
       _currentQuestion.options,
       'guessIndex',
     );
-    _state = NumbersState.feedback;
+    _state = _NumberQuizPhase.feedback;
     final isCorrect = guessIndex == _currentQuestion.correctIndex;
     if (isCorrect) {
       _score++;
@@ -106,14 +109,20 @@ class NumbersController extends ChangeNotifier {
 
     final guessedNumber = _currentQuestion.options[guessIndex];
     final feedback = isCorrect
-        ? NumberFeedback.correct
-        : NumberFeedback.incorrect;
+        ? _NumberQuizFeedback.correct
+        : _NumberQuizFeedback.incorrect;
     try {
-      await _playFeedback(audioPath(guessedNumber, feedback));
+      await _playFeedback(_feedbackAudioPath(guessedNumber, feedback));
     } catch (_) {
       // Audio feedback is optional; a missing asset must not stop the game.
     } finally {
-      _nextQuestion();
+      if (!_disposed) _nextQuestion();
     }
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 }

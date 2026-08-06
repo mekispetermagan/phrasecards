@@ -36,8 +36,6 @@ void main() {
     expect(result.phrases, hasLength(1));
     expect(result.phrases!.single.source, 'Good morning!');
     expect(result.phrases!.single.target, 'Jó reggelt!');
-    expect(result.phrases!.single.isNew, isFalse);
-    expect(result.phrases!.single.rating, 3);
     expect(result.phrases!.single.id, 1);
     expect(result.phrases!.single.audioPath, '/audio/phrase-1-hash.mp3');
   });
@@ -74,26 +72,6 @@ void main() {
 
     expect(result.phrases, isNull);
     expect(result.failure, Failure.networkError);
-  });
-
-  test('markPhraseSeen patches the phrase progress endpoint', () async {
-    final client = MockClient((request) async {
-      expect(request.method, 'PATCH');
-      expect(request.url.path, '/api/phrases/7/seen');
-      return http.Response('', 204);
-    });
-
-    final marked = await PhrasesApi(client: client).markPhraseSeen(7);
-
-    expect(marked, isTrue);
-  });
-
-  test('markPhraseSeen reports an unsuccessful response', () async {
-    final client = MockClient((_) async => http.Response('not found', 404));
-
-    final marked = await PhrasesApi(client: client).markPhraseSeen(7);
-
-    expect(marked, isFalse);
   });
 
   test("fetchRequests returns ids and sources", () async {
@@ -150,8 +128,6 @@ void main() {
 
     expect(result.phrase!.source, "Good afternoon!");
     expect(result.phrase!.target, "Jó napot!");
-    expect(result.phrase!.isNew, isTrue);
-    expect(result.phrase!.rating, 3);
   });
 
   test("request API preserves conflict details", () async {

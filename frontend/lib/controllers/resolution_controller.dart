@@ -15,6 +15,8 @@ class ResolutionController extends ChangeNotifier {
   String _target = '';
   bool _isSubmitting = false;
   String? _errorMessage;
+  int _operation = 0;
+  bool _disposed = false;
 
   ResolutionController(this._api);
 
@@ -45,11 +47,13 @@ class ResolutionController extends ChangeNotifier {
   }
 
   Future<void> load() async {
+    final operation = ++_operation;
     _status = RequestListStatus.loading;
     _errorMessage = null;
     notifyListeners();
 
     final result = await _api.fetchRequests();
+    if (_disposed || operation != _operation) return;
     if (result.requests == null) {
       _status = RequestListStatus.error;
       _errorMessage = _failureMessage(result.failure, result.message);
@@ -63,6 +67,7 @@ class ResolutionController extends ChangeNotifier {
   }
 
   void select(PhraseRequest request) {
+    _operation++;
     _selected = request;
     _source = request.source;
     _target = '';
@@ -86,6 +91,7 @@ class ResolutionController extends ChangeNotifier {
   Future<bool> submit() async {
     if (!formViewData.canSubmit) return false;
 
+    final operation = ++_operation;
     _isSubmitting = true;
     _errorMessage = null;
     notifyListeners();
@@ -96,6 +102,7 @@ class ResolutionController extends ChangeNotifier {
       source: _source.trim(),
       target: _target.trim(),
     );
+    if (_disposed || operation != _operation) return false;
 
     if (result.phrase == null) {
       _isSubmitting = false;
@@ -107,6 +114,13 @@ class ResolutionController extends ChangeNotifier {
     _isSubmitting = false;
     await load();
     return true;
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _operation++;
+    super.dispose();
   }
 }
 

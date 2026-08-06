@@ -103,17 +103,17 @@ class _AppRootState extends State<AppRoot> {
       ),
 
       SessionStatus.accents => AccentsScreen(
-        viewData: _sessionController.accentedViewData,
+        viewData: _sessionController.accentsViewData,
         onBack: _sessionController.onMenu,
         onNext: _sessionController.accentsNext,
         onDrop: _sessionController.accentsOnDrop,
         playAudio: _sessionController.accentsPlayAudio,
       ),
 
-      SessionStatus.numbers => NumbersScreen(
-        viewData: _sessionController.numbersViewData,
+      SessionStatus.numberQuiz => NumberQuizScreen(
+        viewData: _sessionController.numberQuizViewData,
         onBack: _sessionController.onMenu,
-        onSubmit: _sessionController.onNumbersSubmit,
+        onSubmit: _sessionController.numberQuizSubmit,
       ),
 
       SessionStatus.request => RequestScreen(

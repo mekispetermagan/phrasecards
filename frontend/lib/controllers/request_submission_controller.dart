@@ -10,6 +10,8 @@ class RequestSubmissionController extends ChangeNotifier {
   String _source = '';
   bool _isSubmitting = false;
   String? _errorMessage;
+  int _operation = 0;
+  bool _disposed = false;
 
   RequestSubmissionController(this._api);
 
@@ -24,6 +26,7 @@ class RequestSubmissionController extends ChangeNotifier {
   );
 
   void open() {
+    _operation++;
     _source = '';
     _isSubmitting = false;
     _errorMessage = null;
@@ -39,11 +42,13 @@ class RequestSubmissionController extends ChangeNotifier {
   Future<bool> submit() async {
     if (!viewData.canSubmit) return false;
 
+    final operation = ++_operation;
     _isSubmitting = true;
     _errorMessage = null;
     notifyListeners();
 
     final result = await _api.submitRequest(_source.trim());
+    if (_disposed || operation != _operation) return false;
     _isSubmitting = false;
 
     if (result.request == null) {
@@ -59,6 +64,13 @@ class RequestSubmissionController extends ChangeNotifier {
     _source = '';
     notifyListeners();
     return true;
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _operation++;
+    super.dispose();
   }
 }
 

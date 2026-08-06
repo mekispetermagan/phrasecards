@@ -7,7 +7,7 @@ import 'package:phrasecards/screens/accents_screen.dart';
 Widget _screen(AccentsPhase phase) {
   return MaterialApp(
     home: AccentsScreen(
-      viewData: AccentedViewData(
+      viewData: AccentsViewData(
         currentLetterData: null,
         accentedVowelData: const [],
         pronunciation: null,
