@@ -8,8 +8,7 @@ The production backend requires the API key stored on `mekis.dev` in:
 
 `/home/peter/apps/phrasecards/.env`
 
-Build the APK by streaming that key directly into the Flutter build process. The
-key is not printed or stored in a local file:
+Build the APK by streaming that key directly into the Flutter build process. The key is not printed or stored in a local file:
 
 ```bash
 ssh mekis.dev 'bash -lc '\''set -a; source /home/peter/apps/phrasecards/.env; printf %s "$API_KEY"'\''' \

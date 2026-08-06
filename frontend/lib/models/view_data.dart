@@ -71,6 +71,23 @@ class MemoryViewData {
   });
 }
 
+class NumbersViewData {
+  final int solution;
+  final List<String> options;
+  final String emoji;
+  final int score;
+  final int? successHighlightIndex;
+  final int? failureHighlightIndex;
+  const NumbersViewData({
+    required this.solution,
+    required this.options,
+    required this.emoji,
+    required this.score,
+    this.successHighlightIndex,
+    this.failureHighlightIndex,
+  });
+}
+
 class RequestSubmissionViewData {
   final String source;
   final bool isSubmitting;

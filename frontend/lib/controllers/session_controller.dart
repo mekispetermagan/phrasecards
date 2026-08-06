@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../api/api.dart';
+import '../audio/asset_audio_player.dart';
 import '../models/learn.dart';
 import '../models/phrase.dart';
 import '../models/phrase_request.dart';
@@ -13,6 +14,7 @@ import 'memory_controller.dart';
 import 'pronunciation_controller.dart';
 import 'quiz_controller.dart';
 import 'accents_controller.dart';
+import 'numbers_controller.dart';
 import 'request_submission_controller.dart';
 import 'resolution_controller.dart';
 
@@ -24,6 +26,7 @@ enum SessionStatus {
   quiz,
   accents,
   memory,
+  numbers,
   request,
   resolve,
   resolveForm,
@@ -36,9 +39,11 @@ class SessionController extends ChangeNotifier {
   QuizController? _quizController;
   MemoryController? _memoryController;
   AccentsController? _accentsController;
+  late final NumbersController _numbersController;
   late final RequestSubmissionController _requestController;
   late final ResolutionController _resolutionController;
   final PronunciationController _pronunciationController;
+  final AssetAudioPlayer _assetAudioPlayer;
   final PhraseViewStore _viewStore;
 
   final PhrasesApi _api;
@@ -53,6 +58,7 @@ class SessionController extends ChangeNotifier {
     ("Play quiz", _onQuiz),
     ("Memory game", _onMemory),
     ("Fix the accents", _onAccents),
+    ("Practice numbers", _onNumbers),
     ("Request a phrase", _onRequest),
     ("Resolve a request", _onResolve),
   ];
@@ -61,10 +67,12 @@ class SessionController extends ChangeNotifier {
     PhrasesApi? api,
     RequestsApi? requestsApi,
     PronunciationController? pronunciationController,
+    AssetAudioPlayer? assetAudioPlayer,
     PhraseViewRepository? phraseViewRepository,
   }) : _api = api ?? PhrasesApi(),
        _pronunciationController =
            pronunciationController ?? PronunciationController(),
+       _assetAudioPlayer = assetAudioPlayer ?? SoloudAssetAudioPlayer(),
        _viewStore = PhraseViewStore(
          phraseViewRepository ?? SharedPreferencesPhraseViewRepository(),
        ) {
@@ -72,6 +80,8 @@ class SessionController extends ChangeNotifier {
     _requestController = RequestSubmissionController(requestApi)
       ..addListener(_forwardNotification);
     _resolutionController = ResolutionController(requestApi)
+      ..addListener(_forwardNotification);
+    _numbersController = NumbersController(_assetAudioPlayer.play)
       ..addListener(_forwardNotification);
     _pronunciationController.addListener(_forwardNotification);
     unawaited(_load());
@@ -105,6 +115,8 @@ class SessionController extends ChangeNotifier {
         ));
   }
 
+  NumbersController get _numbers => _numbersController;
+
   LearnViewData get learnViewData => LearnViewData(
     phrase: _learn.currentPhrase,
     isTurned: _learn.cardIsTurned,
@@ -134,6 +146,15 @@ class SessionController extends ChangeNotifier {
     cards: _memory.cards,
     canPlay: _memory.canPlay,
     isComplete: _memory.isComplete,
+  );
+
+  NumbersViewData get numbersViewData => NumbersViewData(
+    solution: _numbers.solution,
+    options: _numbers.options,
+    emoji: _numbers.emoji,
+    score: _numbers.score,
+    successHighlightIndex: _numbers.successHighlightIndex,
+    failureHighlightIndex: _numbers.failureHighlightIndex,
   );
 
   void learnTurnCard() => _learn.turnCard();
@@ -170,6 +191,8 @@ class SessionController extends ChangeNotifier {
   Future<void> memorySelect(int cardId) => _memory.select(cardId);
 
   void memoryStartNewGame() => _memory.startNewGame();
+
+  void Function(int)? get onNumbersSubmit => _numbers.submit;
 
   RequestSubmissionViewData get requestViewData => _requestController.viewData;
 
@@ -324,10 +347,12 @@ class SessionController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    unawaited(_assetAudioPlayer.stop());
     _learnController?.removeListener(_forwardNotification);
     _quizController?.removeListener(_forwardNotification);
     _memoryController?.removeListener(_forwardNotification);
     _accentsController?.removeListener(_forwardNotification);
+    _numbersController.removeListener(_forwardNotification);
     _requestController.removeListener(_forwardNotification);
     _resolutionController.removeListener(_forwardNotification);
     _pronunciationController.removeListener(_forwardNotification);
@@ -336,6 +361,7 @@ class SessionController extends ChangeNotifier {
     _quizController?.dispose();
     _memoryController?.dispose();
     _accentsController?.dispose();
+    _numbersController.dispose();
     _requestController.dispose();
     _resolutionController.dispose();
     _pronunciationController.dispose();
@@ -344,6 +370,7 @@ class SessionController extends ChangeNotifier {
   }
 
   void onMenu() {
+    if (status == SessionStatus.numbers) unawaited(_assetAudioPlayer.stop());
     status = SessionStatus.menu;
     notifyListeners();
     unawaited(_refreshPhrases());
@@ -369,6 +396,11 @@ class SessionController extends ChangeNotifier {
     status = SessionStatus.accents;
     notifyListeners();
     unawaited(_accents.playAudio());
+  }
+
+  void _onNumbers() {
+    status = SessionStatus.numbers;
+    notifyListeners();
   }
 
   void _onRequest() {

@@ -110,6 +110,12 @@ class _AppRootState extends State<AppRoot> {
         playAudio: _sessionController.accentsPlayAudio,
       ),
 
+      SessionStatus.numbers => NumbersScreen(
+        viewData: _sessionController.numbersViewData,
+        onBack: _sessionController.onMenu,
+        onSubmit: _sessionController.onNumbersSubmit,
+      ),
+
       SessionStatus.request => RequestScreen(
         viewData: _sessionController.requestViewData,
         onBack: _sessionController.onMenu,
