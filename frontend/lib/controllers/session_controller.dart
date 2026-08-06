@@ -192,7 +192,7 @@ class SessionController extends ChangeNotifier {
 
   void memoryStartNewGame() => _memory.startNewGame();
 
-  void Function(int)? get onNumbersSubmit => _numbers.submit;
+  Future<void> Function(int)? get onNumbersSubmit => _numbers.submit;
 
   RequestSubmissionViewData get requestViewData => _requestController.viewData;
 

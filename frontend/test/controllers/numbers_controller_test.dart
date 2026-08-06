@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phrasecards/controllers/numbers_controller.dart';
@@ -68,6 +69,57 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     await Future<void>.delayed(Duration.zero);
 
+    expect(controller.submit, isNotNull);
+    expect(controller.successHighlightIndex, isNull);
+    expect(controller.failureHighlightIndex, isNull);
+  });
+
+  test('uses an injected random source for repeatable questions', () {
+    final first = NumbersController((_) async {}, random: Random(123));
+    final second = NumbersController((_) async {}, random: Random(123));
+    addTearDown(first.dispose);
+    addTearDown(second.dispose);
+
+    expect(first.solution, second.solution);
+    expect(first.options, second.options);
+    expect(first.emoji, second.emoji);
+  });
+
+  test('ignores a stale second submission while feedback is playing', () async {
+    final playback = Completer<void>();
+    var playCount = 0;
+    final controller = NumbersController((_) {
+      playCount++;
+      return playback.future;
+    }, random: Random(1));
+    addTearDown(controller.dispose);
+
+    final correctIndex = controller.options.indexOf(
+      numberNames[controller.solution - 1],
+    );
+    final staleSubmit = controller.submit!;
+
+    final firstSubmission = staleSubmit(correctIndex);
+    await staleSubmit(correctIndex);
+
+    expect(playCount, 1);
+    expect(controller.score, 1);
+
+    playback.complete();
+    await firstSubmission;
+  });
+
+  test('rejects invalid option indices without changing state', () async {
+    var played = false;
+    final controller = NumbersController((_) async {
+      played = true;
+    });
+    addTearDown(controller.dispose);
+
+    await expectLater(controller.submit!(-1), throwsRangeError);
+
+    expect(played, isFalse);
+    expect(controller.score, 0);
     expect(controller.submit, isNotNull);
     expect(controller.successHighlightIndex, isNull);
     expect(controller.failureHighlightIndex, isNull);

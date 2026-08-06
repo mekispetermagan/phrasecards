@@ -4,8 +4,9 @@ class NumberQuizQuestion {
   final List<int> options;
   final int correctIndex;
 
-  NumberQuizQuestion({required this.options, required this.correctIndex}) {
-    if (correctIndex < 0 || options.length < correctIndex) {
+  NumberQuizQuestion({required List<int> options, required this.correctIndex})
+    : options = List.unmodifiable(options) {
+    if (correctIndex < 0 || options.length <= correctIndex) {
       throw RangeError("correctIndex is out of range.");
     }
   }

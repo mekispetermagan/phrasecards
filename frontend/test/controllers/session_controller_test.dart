@@ -4,7 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:phrasecards/api/api.dart';
+import 'package:phrasecards/audio/asset_audio_player.dart';
 import 'package:phrasecards/audio/pronunciation_player.dart';
+import 'package:phrasecards/controllers/numbers_controller.dart';
 import 'package:phrasecards/controllers/pronunciation_controller.dart';
 import 'package:phrasecards/controllers/session_controller.dart';
 import 'package:phrasecards/models/accents.dart';
@@ -49,6 +51,24 @@ class _RecordingPronunciationPlayer implements PronunciationPlayer {
 
   @override
   Future<void> stop() async {}
+}
+
+class _ControllableAssetAudioPlayer implements AssetAudioPlayer {
+  final playedPaths = <String>[];
+  final playback = Completer<void>();
+  int stopCount = 0;
+
+  @override
+  Future<void> play(String assetPath) {
+    playedPaths.add(assetPath);
+    return playback.future;
+  }
+
+  @override
+  Future<void> stop() async {
+    stopCount++;
+    if (!playback.isCompleted) playback.complete();
+  }
 }
 
 Future<void> _waitForStatus(
@@ -195,6 +215,51 @@ void main() {
 
     expect(player.playedPaths, isEmpty);
   });
+
+  test(
+    'numbers entry exposes its view and returning to menu stops audio',
+    () async {
+      final player = _ControllableAssetAudioPlayer();
+      final api = PhrasesApi(
+        client: MockClient(
+          (_) async => http.Response(
+            _fourPhrases,
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          ),
+        ),
+      );
+      final controller = SessionController(api: api, assetAudioPlayer: player);
+      addTearDown(controller.dispose);
+      await _waitForStatus(controller, SessionStatus.menu);
+
+      controller.menuItems
+          .singleWhere((item) => item.$1 == 'Practice numbers')
+          .$2();
+
+      expect(controller.status, SessionStatus.numbers);
+      expect(controller.numbersViewData.options, hasLength(3));
+      expect(controller.numbersViewData.solution, inInclusiveRange(1, 10));
+      expect(controller.onNumbersSubmit, isNotNull);
+
+      final solutionName = numberNames[controller.numbersViewData.solution - 1];
+      final correctIndex = controller.numbersViewData.options.indexOf(
+        solutionName,
+      );
+      final submission = controller.onNumbersSubmit!(correctIndex);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(player.playedPaths.single, endsWith('c.mp3'));
+      expect(controller.numbersViewData.score, 1);
+      expect(controller.onNumbersSubmit, isNull);
+
+      controller.onMenu();
+      await submission;
+
+      expect(controller.status, SessionStatus.menu);
+      expect(player.stopCount, 1);
+    },
+  );
 
   test('failed loading exposes an error state and message', () async {
     final api = PhrasesApi(

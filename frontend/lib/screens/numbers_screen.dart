@@ -6,7 +6,7 @@ import '../models/view_data.dart';
 class NumbersScreen extends StatelessWidget {
   final NumbersViewData viewData;
   final VoidCallback onBack;
-  final void Function(int)? onSubmit;
+  final Future<void> Function(int)? onSubmit;
 
   const NumbersScreen({
     required this.viewData,

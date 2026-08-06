@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/number_quiz.dart';
 
-List<String> numberNames = [
+const List<String> numberNames = [
   "egy",
   "kettő",
   "három",
@@ -17,7 +17,7 @@ List<String> numberNames = [
   "tíz",
 ];
 
-List<String> emojis = [
+const List<String> emojis = [
   "🪻",
   "🌸",
   "🍎",
@@ -45,7 +45,7 @@ enum NumberFeedback {
 
 class NumbersController extends ChangeNotifier {
   final Future<void> Function(String assetPath) _playFeedback;
-  final Random random = Random();
+  final Random _random;
   final int _upperLimit = numberNames.length;
   final int _numberOfOptions = 3;
   late NumberQuizQuestion _currentQuestion;
@@ -55,7 +55,8 @@ class NumbersController extends ChangeNotifier {
   NumbersState _state = NumbersState.guessing;
   int _score = 0;
 
-  NumbersController(this._playFeedback) {
+  NumbersController(this._playFeedback, {Random? random})
+    : _random = random ?? Random() {
     _nextQuestion();
   }
 
@@ -67,7 +68,7 @@ class NumbersController extends ChangeNotifier {
   int get score => _score;
   int? get successHighlightIndex => _successHighlightIndex;
   int? get failureHighlightIndex => _failureHighlightIndex;
-  void Function(int)? get submit =>
+  Future<void> Function(int)? get submit =>
       _state == NumbersState.guessing ? _submit : null;
 
   String audioPath(int number, NumberFeedback feedback) =>
@@ -80,13 +81,19 @@ class NumbersController extends ChangeNotifier {
     _currentQuestion = NumberQuizQuestion.generate(
       numberOfOptions: _numberOfOptions,
       upperLimit: _upperLimit,
-      r: random,
+      r: _random,
     );
-    _currentEmoji = emojis[random.nextInt(emojis.length)];
+    _currentEmoji = emojis[_random.nextInt(emojis.length)];
     notifyListeners();
   }
 
   Future<void> _submit(int guessIndex) async {
+    if (_state != NumbersState.guessing) return;
+    RangeError.checkValidIndex(
+      guessIndex,
+      _currentQuestion.options,
+      'guessIndex',
+    );
     _state = NumbersState.feedback;
     final isCorrect = guessIndex == _currentQuestion.correctIndex;
     if (isCorrect) {
