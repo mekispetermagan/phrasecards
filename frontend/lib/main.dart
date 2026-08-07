@@ -121,6 +121,7 @@ class _AppRootState extends State<AppRoot> {
         onBack: _sessionController.onMenu,
         move: _sessionController.phraseBuildingMove,
         submit: _sessionController.phraseBuildingSubmit,
+        playAudio: _sessionController.phraseBuildingPlayAudio,
       ),
 
       SessionStatus.request => RequestScreen(

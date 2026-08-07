@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phrasecards/models/phrasebuilding_state.dart';
 import 'package:phrasecards/models/phrasebuilding_tile.dart';
+import 'package:phrasecards/models/pronunciation.dart';
 import 'package:phrasecards/models/view_data.dart';
 import 'package:phrasecards/screens/phrasebuilding_screen.dart';
 
@@ -11,6 +12,7 @@ const _targetTile = PhraseBuildingTile(id: 2, word: 'WORLD');
 Widget _app({
   void Function(PhraseBuildingTile)? move,
   VoidCallback? submit,
+  VoidCallback? playAudio,
   PhraseBuildingState state = PhraseBuildingState.guessing,
 }) => MaterialApp(
   theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue)),
@@ -19,10 +21,12 @@ Widget _app({
       sourcePool: const [_sourceTile],
       targetPool: const [_targetTile],
       state: state,
+      pronunciation: const PronunciationData(path: '/audio/phrase.mp3'),
     ),
     onBack: () {},
     move: move,
     submit: submit,
+    playAudio: playAudio ?? () {},
   ),
 );
 
@@ -61,5 +65,36 @@ void main() {
     final failureColor = tester.widget<Card>(find.byType(Card).first).color;
 
     expect(successColor, isNot(failureColor));
+  });
+
+  testWidgets('forwards pronunciation playback', (tester) async {
+    var playCount = 0;
+    await tester.pumpWidget(_app(playAudio: () => playCount++));
+
+    await tester.tap(find.byIcon(Icons.volume_up));
+
+    expect(playCount, 1);
+  });
+
+  testWidgets('places pronunciation and submit in a spaced bottom row', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app());
+
+    final actionRow = tester.widget<Row>(
+      find.ancestor(
+        of: find.widgetWithText(FilledButton, 'Submit'),
+        matching: find.byType(Row),
+      ),
+    );
+
+    expect(actionRow.mainAxisAlignment, MainAxisAlignment.spaceBetween);
+    expect(
+      find.descendant(
+        of: find.byWidget(actionRow),
+        matching: find.byIcon(Icons.volume_up),
+      ),
+      findsOneWidget,
+    );
   });
 }

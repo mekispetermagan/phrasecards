@@ -71,6 +71,14 @@ class _ControllableAssetAudioPlayer implements AssetAudioPlayer {
   }
 }
 
+class _ImmediateAssetAudioPlayer implements AssetAudioPlayer {
+  @override
+  Future<void> play(String assetPath) async {}
+
+  @override
+  Future<void> stop() async {}
+}
+
 Future<void> _waitForStatus(
   SessionController controller,
   SessionStatus expected,
@@ -215,6 +223,53 @@ void main() {
 
     expect(player.playedPaths, isEmpty);
   });
+
+  test(
+    'phrase building pronounces on entry and successful advancement',
+    () async {
+      final player = _RecordingPronunciationPlayer();
+      final pronunciation = PronunciationController(player: player);
+      final api = PhrasesApi(
+        client: MockClient(
+          (_) async => http.Response(
+            _phrasesWithAudio,
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          ),
+        ),
+      );
+      final controller = SessionController(
+        api: api,
+        pronunciationController: pronunciation,
+        assetAudioPlayer: _ImmediateAssetAudioPlayer(),
+      );
+      addTearDown(controller.dispose);
+      await _waitForStatus(controller, SessionStatus.menu);
+
+      expect(player.playedPaths, isEmpty);
+      controller.menuItems
+          .singleWhere((item) => item.$1 == 'Build phrases')
+          .$2();
+      expect(player.playedPaths, hasLength(1));
+
+      final currentPath = player.playedPaths.single;
+      final targetByPath = {
+        '/audio/one.mp3': 'EGY',
+        '/audio/two.mp3': 'KETTŐ',
+        '/audio/three.mp3': 'HÁROM',
+        '/audio/four.mp3': 'NÉGY',
+      };
+      final solution = targetByPath[currentPath]!;
+      final tile = controller.phraseBuildingViewData.sourcePool.firstWhere(
+        (tile) => tile.word == solution,
+      );
+      controller.phraseBuildingMove!(tile);
+      await controller.phraseBuildingSubmit!();
+
+      expect(player.playedPaths, hasLength(2));
+      expect(player.playedPaths.last, isNot(currentPath));
+    },
+  );
 
   test('returning from quiz stops asset feedback playback', () async {
     final player = _ControllableAssetAudioPlayer();

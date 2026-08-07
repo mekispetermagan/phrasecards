@@ -94,11 +94,13 @@ class PhraseBuildingViewData {
   final List<PhraseBuildingTile> sourcePool;
   final List<PhraseBuildingTile> targetPool;
   final PhraseBuildingState state;
+  final PronunciationData pronunciation;
 
   const PhraseBuildingViewData({
     required this.sourcePool,
     required this.targetPool,
     required this.state,
+    required this.pronunciation,
   });
 }
 

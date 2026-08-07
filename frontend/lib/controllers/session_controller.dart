@@ -173,6 +173,7 @@ class SessionController extends ChangeNotifier {
     sourcePool: _phraseBuilding.sourcePool,
     targetPool: _phraseBuilding.targetPool,
     state: _phraseBuilding.state,
+    pronunciation: _phraseBuilding.pronunciation,
   );
 
   void learnTurnCard() => _learn.turnCard();
@@ -215,7 +216,18 @@ class SessionController extends ChangeNotifier {
   void Function(PhraseBuildingTile tile)? get phraseBuildingMove =>
       _phraseBuilding.move;
 
-  Future<void> Function()? get phraseBuildingSubmit => _phraseBuilding.submit;
+  Future<void> Function()? get phraseBuildingSubmit {
+    final submit = _phraseBuilding.submit;
+    if (submit == null) return null;
+    return () async {
+      final advanced = await submit();
+      if (advanced && status == SessionStatus.phraseBuilding) {
+        await _phraseBuilding.playAudio();
+      }
+    };
+  }
+
+  Future<void> phraseBuildingPlayAudio() => _phraseBuilding.playAudio();
 
   RequestSubmissionViewData get requestViewData => _requestController.viewData;
 
@@ -345,8 +357,11 @@ class SessionController extends ChangeNotifier {
       pronunciationController: _pronunciationController,
     )..addListener(_forwardNotification);
 
-    _phraseBuildingController = PhraseBuildingController(phrases: phrases)
-      ..addListener(_forwardNotification);
+    _phraseBuildingController = PhraseBuildingController(
+      phrases: phrases,
+      pronunciationController: _pronunciationController,
+      feedbackPlayer: _assetAudioPlayer.play,
+    )..addListener(_forwardNotification);
   }
 
   String? _phraseValidationError(List<Phrase> phrases) {
@@ -401,7 +416,9 @@ class SessionController extends ChangeNotifier {
   }
 
   void onMenu() {
-    if (status == SessionStatus.quiz || status == SessionStatus.numberQuiz) {
+    if (status == SessionStatus.quiz ||
+        status == SessionStatus.numberQuiz ||
+        status == SessionStatus.phraseBuilding) {
       unawaited(_assetAudioPlayer.stop());
     }
     status = SessionStatus.menu;
@@ -439,6 +456,7 @@ class SessionController extends ChangeNotifier {
   void _onPhraseBuilding() {
     status = SessionStatus.phraseBuilding;
     notifyListeners();
+    unawaited(_phraseBuilding.playAudio());
   }
 
   void _onRequest() {

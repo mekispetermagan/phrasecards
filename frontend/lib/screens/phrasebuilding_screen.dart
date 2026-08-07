@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/phrasebuilding_tile.dart';
 import '../models/view_data.dart';
 import '../widgets/appbar.dart';
+import '../widgets/buttons.dart';
 import '../widgets/phrasebuildingcard.dart';
 
 class PhraseBuildingScreen extends StatelessWidget {
@@ -10,12 +11,14 @@ class PhraseBuildingScreen extends StatelessWidget {
   final VoidCallback onBack;
   final void Function(PhraseBuildingTile)? move;
   final VoidCallback? submit;
+  final VoidCallback playAudio;
 
   const PhraseBuildingScreen({
     required this.viewData,
     required this.onBack,
     required this.move,
     required this.submit,
+    required this.playAudio,
     super.key,
   });
 
@@ -59,8 +62,12 @@ class PhraseBuildingScreen extends StatelessWidget {
                     ],
                   ),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
+                      SpeakerButton(
+                        pronunciation: viewData.pronunciation,
+                        onPressed: playAudio,
+                      ),
                       FilledButton(
                         onPressed: submit,
                         child: Padding(
