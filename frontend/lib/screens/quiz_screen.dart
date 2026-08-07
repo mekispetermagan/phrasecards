@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:dynamic_color/dynamic_color.dart';
 
 import '../models/view_data.dart';
 import '../widgets/appbar.dart';
@@ -26,7 +25,7 @@ class QuizScreen extends StatelessWidget {
     final question = viewData.question;
     final colorScheme = Theme.of(context).colorScheme;
     final successScheme = ColorScheme.fromSeed(
-      seedColor: Colors.green.harmonizeWith(colorScheme.primary),
+      seedColor: Colors.green,
       brightness: colorScheme.brightness,
     );
     Color backgroundColor(int index) => index == viewData.correctHighlightIndex

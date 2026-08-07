@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dynamic_color/dynamic_color.dart';
+
 import '../widgets/appbar.dart';
 import '../models/view_data.dart';
 
@@ -18,9 +18,8 @@ class NumberQuizScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
-    // We need a harmonizing green for success feedback.
     final ColorScheme successScheme = ColorScheme.fromSeed(
-      seedColor: Colors.green.harmonizeWith(colorScheme.primary),
+      seedColor: Colors.green,
       brightness: colorScheme.brightness,
     );
     Color buttonBgColor(int i) => viewData.successHighlightIndex == i

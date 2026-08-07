@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:dynamic_color/dynamic_color.dart';
 
 import '../models/phrasebuilding_state.dart';
 import '../models/phrasebuilding_tile.dart';
@@ -19,14 +18,12 @@ class PhraseBuildingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme guessingScheme = Theme.of(context).colorScheme;
-    // Harmonizing green for success feedback.
     final ColorScheme successScheme = ColorScheme.fromSeed(
-      seedColor: Colors.green.harmonizeWith(guessingScheme.primary),
+      seedColor: Colors.green,
       brightness: guessingScheme.brightness,
     );
-    // Harmonizing red for failure feedback.
     final ColorScheme failureScheme = ColorScheme.fromSeed(
-      seedColor: Colors.red.harmonizeWith(guessingScheme.primary),
+      seedColor: Colors.red,
       brightness: guessingScheme.brightness,
     );
     final ColorScheme colorScheme = switch (state) {
