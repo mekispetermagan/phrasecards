@@ -70,15 +70,18 @@ Then start Flutter in another terminal:
 ```bash
 cd frontend
 flutter pub get
-flutter run
+flutter run -d linux
 ```
 
 The default frontend configuration expects the API at
 `http://127.0.0.1:8000`. A different endpoint can be supplied at build time:
 
 ```bash
-flutter run --dart-define=API_BASE_URL=https://mekis.dev
+flutter run -d linux --dart-define=API_BASE_URL=https://phrasecards.mekis.dev
 ```
+
+See [`frontend/BUILDING.md`](frontend/BUILDING.md) for the ARM64-only Android
+release process and complete frontend build instructions.
 
 For more backend and reverse-proxy notes, see
 [`backend/get_started.md`](backend/get_started.md).
