@@ -37,7 +37,7 @@ class NumberQuizScreen extends StatelessWidget {
     return Scaffold(
       appBar: FeatureAppBar(title: "Practice numbers", onBack: onBack),
       body: CustomScrollView(
-        slivers: [
+        slivers: <Widget>[
           SliverFillRemaining(
             hasScrollBody: false,
             child: Column(

@@ -5,6 +5,7 @@ export 'quiz_screen.dart';
 export 'memory_screen.dart';
 export 'accents_screen.dart';
 export 'number_quiz_screen.dart';
+export 'phrasebuilding_screen.dart';
 export 'request_screen.dart';
 export 'resolve_screen.dart';
 export 'resolution_form_screen.dart';

@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:phrasecards/controllers/phrasebuilding_controller.dart';
 
 import '../api/api.dart';
 import '../audio/asset_audio_player.dart';
 import '../models/learn.dart';
 import '../models/phrase.dart';
 import '../models/phrase_request.dart';
+import '../models/phrasebuilding_tile.dart';
 import '../storage/phrase_view_store.dart';
 import '../models/view_data.dart';
 import 'learn_controller.dart';
@@ -27,6 +29,7 @@ enum SessionStatus {
   accents,
   memory,
   numberQuiz,
+  phraseBuilding,
   request,
   resolve,
   resolveForm,
@@ -40,6 +43,7 @@ class SessionController extends ChangeNotifier {
   MemoryController? _memoryController;
   AccentsController? _accentsController;
   late final NumberQuizController _numberQuizController;
+  PhraseBuildingController? _phraseBuildingController;
   late final RequestSubmissionController _requestController;
   late final ResolutionController _resolutionController;
   final PronunciationController _pronunciationController;
@@ -59,6 +63,7 @@ class SessionController extends ChangeNotifier {
     ("Memory game", _onMemory),
     ("Fix the accents", _onAccents),
     ("Practice numbers", _onNumberQuiz),
+    ("Build phrases", _onPhraseBuilding),
     ("Request a phrase", _onRequest),
     ("Resolve a request", _onResolve),
   ];
@@ -117,6 +122,13 @@ class SessionController extends ChangeNotifier {
 
   NumberQuizController get _numberQuiz => _numberQuizController;
 
+  PhraseBuildingController get _phraseBuilding {
+    return _phraseBuildingController ??
+        (throw StateError(
+          'PhraseBuildingController accessed before session initialization',
+        ));
+  }
+
   LearnViewData get learnViewData => LearnViewData(
     phrase: _learn.currentPhrase,
     isTurned: _learn.cardIsTurned,
@@ -157,6 +169,12 @@ class SessionController extends ChangeNotifier {
     failureHighlightIndex: _numberQuiz.failureHighlightIndex,
   );
 
+  PhraseBuildingViewData get phraseBuildingViewData => PhraseBuildingViewData(
+    sourcePool: _phraseBuilding.sourcePool,
+    targetPool: _phraseBuilding.targetPool,
+    state: _phraseBuilding.state,
+  );
+
   void learnTurnCard() => _learn.turnCard();
 
   Future<void> learnNext() => _learn.next();
@@ -193,6 +211,11 @@ class SessionController extends ChangeNotifier {
   void memoryStartNewGame() => _memory.startNewGame();
 
   Future<void> Function(int)? get numberQuizSubmit => _numberQuiz.submit;
+
+  void Function(PhraseBuildingTile tile)? get phraseBuildingMove =>
+      _phraseBuilding.move;
+
+  Future<void> Function()? get phraseBuildingSubmit => _phraseBuilding.submit;
 
   RequestSubmissionViewData get requestViewData => _requestController.viewData;
 
@@ -291,10 +314,12 @@ class SessionController extends ChangeNotifier {
     _quizController?.removeListener(_forwardNotification);
     _memoryController?.removeListener(_forwardNotification);
     _accentsController?.removeListener(_forwardNotification);
+    _phraseBuildingController?.removeListener(_forwardNotification);
     _learnController?.dispose();
     _quizController?.dispose();
     _memoryController?.dispose();
     _accentsController?.dispose();
+    _phraseBuildingController?.dispose();
 
     _learnController = LearnController(
       phrases: phrases,
@@ -319,6 +344,9 @@ class SessionController extends ChangeNotifier {
       phrases: phrases,
       pronunciationController: _pronunciationController,
     )..addListener(_forwardNotification);
+
+    _phraseBuildingController = PhraseBuildingController(phrases: phrases)
+      ..addListener(_forwardNotification);
   }
 
   String? _phraseValidationError(List<Phrase> phrases) {
@@ -354,6 +382,7 @@ class SessionController extends ChangeNotifier {
     _memoryController?.removeListener(_forwardNotification);
     _accentsController?.removeListener(_forwardNotification);
     _numberQuizController.removeListener(_forwardNotification);
+    _phraseBuildingController?.removeListener(_forwardNotification);
     _requestController.removeListener(_forwardNotification);
     _resolutionController.removeListener(_forwardNotification);
     _pronunciationController.removeListener(_forwardNotification);
@@ -363,6 +392,7 @@ class SessionController extends ChangeNotifier {
     _memoryController?.dispose();
     _accentsController?.dispose();
     _numberQuizController.dispose();
+    _phraseBuildingController?.dispose();
     _requestController.dispose();
     _resolutionController.dispose();
     _pronunciationController.dispose();
@@ -403,6 +433,11 @@ class SessionController extends ChangeNotifier {
 
   void _onNumberQuiz() {
     status = SessionStatus.numberQuiz;
+    notifyListeners();
+  }
+
+  void _onPhraseBuilding() {
+    status = SessionStatus.phraseBuilding;
     notifyListeners();
   }
 

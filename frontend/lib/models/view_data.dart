@@ -3,6 +3,8 @@ import 'letter_data.dart';
 import 'learn.dart';
 import 'memory.dart';
 import 'phrase.dart';
+import 'phrasebuilding_state.dart';
+import 'phrasebuilding_tile.dart';
 import 'phrase_request.dart';
 import 'pronunciation.dart';
 import 'quiz.dart';
@@ -85,6 +87,18 @@ class NumberQuizViewData {
     required this.score,
     this.successHighlightIndex,
     this.failureHighlightIndex,
+  });
+}
+
+class PhraseBuildingViewData {
+  final List<PhraseBuildingTile> sourcePool;
+  final List<PhraseBuildingTile> targetPool;
+  final PhraseBuildingState state;
+
+  const PhraseBuildingViewData({
+    required this.sourcePool,
+    required this.targetPool,
+    required this.state,
   });
 }
 

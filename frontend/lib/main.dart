@@ -116,6 +116,13 @@ class _AppRootState extends State<AppRoot> {
         onSubmit: _sessionController.numberQuizSubmit,
       ),
 
+      SessionStatus.phraseBuilding => PhraseBuildingScreen(
+        viewData: _sessionController.phraseBuildingViewData,
+        onBack: _sessionController.onMenu,
+        move: _sessionController.phraseBuildingMove,
+        submit: _sessionController.phraseBuildingSubmit,
+      ),
+
       SessionStatus.request => RequestScreen(
         viewData: _sessionController.requestViewData,
         onBack: _sessionController.onMenu,
